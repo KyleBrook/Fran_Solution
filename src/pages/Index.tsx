@@ -4,8 +4,8 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 
 const sampleData: PDFData = {
   cover: {
-    background: "/background.png",
-    logo: "/logo.png",
+    background: "/placeholder.svg",
+    logo: "/favicon.ico",
     lessonNumber: "Aula 1",
     topic: "Introdução ao Tema",
     author: "Nome da Autora",
@@ -22,15 +22,16 @@ const sampleData: PDFData = {
         Segundo parágrafo de exemplo para mostrar o estilo de página de conteúdo em A4.
       </p>
     </>,
-    // Você pode adicionar quantas páginas quiser aqui, basta empurrar mais React nodes.
   ],
 };
 
 const Index = () => {
   return (
-    <div className="space-y-8">
-      <PDFGenerator data={sampleData} />
-      <MadeWithDyad />
+    <div className="min-h-screen bg-muted/40 py-8">
+      <div className="space-y-8">
+        <PDFGenerator data={sampleData} />
+        <MadeWithDyad />
+      </div>
     </div>
   );
 };
