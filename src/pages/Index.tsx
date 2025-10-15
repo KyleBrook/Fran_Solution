@@ -4,13 +4,17 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 
 const sampleData: PDFData = {
   cover: {
-    background: "/capa-bg.png", // coloque seu anexo 1 aqui (fallback automático se não existir)
-    logo: "/logo-edd.png",       // coloque seu anexo 2 aqui (fallback automático se não existir)
+    background: "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Background.png",
+    logo: "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
     lessonNumber: "M3 | Aula 06",
     topic: "Origem das Nações",
     signatureTitle: "GÊNESIS , O INÍCIO DE TUDO.",
     signatureSubtitle: "COM LUMA ELPIDIO",
   },
+  // Marca d’água em todas as páginas internas (logo EDD)
+  contentBackground: "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
+  // Logo de rodapé centralizado em todas as páginas internas
+  footerLogo: "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Estudantes%20de%20Deus.png",
   pages: [
     <>
       <h1 className="text-2xl font-bold mb-4">Aula 6 - Origem das Nações</h1>
@@ -52,63 +56,80 @@ const sampleData: PDFData = {
       <p className="mb-2">
         Em Gênesis 2-3, o jardim do Éden funciona como o local de encontro entre o Senhor Deus e o
         primeiro casal humano. Há paralelos interessantes entre o Éden e os santuários posteriores,
-        particularmente o tabernáculo e o templo de Jerusalém. Vamos ver algumas semelhanças:
+        particularmente o tabernáculo e o templo de Jerusalém, vamos ver algumas dessas semelhanças:
       </p>
       <ol className="list-decimal pl-5 space-y-1 mb-4">
         <li>
-          O Senhor Deus caminha por entre o Éden da mesma maneira em que o faz mais tarde, no tabernáculo
-          (Gn 3:8; Lv 26:12; Dt 23:15; 2Sm 7:6-7).
+          O Senhor Deus caminha por entre o Éden da mesma maneira em
+          que o faz mais tarde, no tabernáculo (Gn 3:8; Lv 26:12; Dt 23:15; 2Sm 7:6-7).
         </li>
         <li>
-          Tanto no Éden quanto nos santuários posteriores, entra-se pelo lado oriental, e ambos são
-          guardados por querubins (Gn 3:24; Ex 25:18-22; 26:31; 1Rs 6:27-29).
+          Tanto no Éden quanto nos santuários posteriores, entra-se pelo
+          lado oriental, e ambos são guardados por querubins (Gn 3:24; Ex
+          25:18-22; 26:31; 1Rs 6:27-29).
         </li>
         <li>
-          A menorá (ou candelabro) do tabernáculo possivelmente representa a árvore da vida (Gn 2:9, 3:22; Êx 25:31-35).
+          A menorá (ou candelabro) do tabernáculo possivelmente
+          representa a árvore da vida (Gn 2:9, 3:22; Êx 25:31-35).
         </li>
         <li>
-          O par de palavras hebraicas na ordem divina ao homem para cultivar e guardar (o jardim) (Gn 2:15)
-          só é usado em combinação novamente no Pentateuco em referência aos deveres dos levitas no santuário
-          (Nm 3:7-8; 8:26; 18:5-6).
+          O par de palavras hebraicas na ordem divina ao homem para
+          cultivar e guardar (o jardim) (Gn 2:15) só é usado em combinação
+          novamente no Pentateuco em referência aos deveres dos levitas no
+          santuário (Nm 3:7-8; 8:26; 18:5-6).
         </li>
         <li>
-          O rio que flui do Éden (Gn 2:10) lembra Ezequiel 47:1-12, em que se vislumbra um rio fluindo do
-          templo futuro em Jerusalém e levando vida ao mar Morto. Por fim, o ouro e ônix mencionados em
-          Gênesis 2:11-12 são usados extensivamente para decorar santuários e vestes sacerdotais posteriores
-          (Êx 25:7,11,17,31). O ouro, em particular, é associado à presença divina.
+          O rio que flui do Éden (Gn 2:10) lembra Ezequiel 47:1-12, em que se
+          vislumbra um rio fluindo do templo futuro em Jerusalém e levando
+          vida ao mar Morto. Por fim, o ouro e ônix mencionados em Gênesis
+          2:11-12 são usados extensivamente para decorar santuários e vestes
+          sacerdotais posteriores (Êx 25:7,11,17,31). O ouro, em particular, é
+          associado à presença divina.
         </li>
       </ol>
       <p className="mb-2">
-        Já que o Éden é um paraíso em que a divindade e a humanidade gozam da companhia um do outro,
-        é pouco surpreendente que ele se torne o protótipo dos santuários posteriores.
+        Já que o Éden é um paraíso em que a divindade e a humanidade
+        gozam da companhia um do outro, é pouco surpreendente que
+        ele se torne o protótipo dos santuários posteriores.
       </p>
       <p className="mb-2">
-        Embora os seres humanos desfrutem comunhão íntima com Deus no tabernáculo e no templo de Jerusalém,
-        o acesso direto à presença imediata de Deus é limitado a uma vez por ano, e ainda assim apenas ao
-        sumo sacerdote. Todavia, no Éden o primeiro homem e a primeira mulher têm o privilégio único de
-        relacionar-se face a face com Deus, sem medo ou vergonha. Em contraste com esse histórico, o relato
-        da desobediência é bem mais trágico.
+        Embora os seres humanos desfrutem comunhão íntima com Deus
+        no tabernáculo e no templo de Jerusalém, o acesso direto à
+        presença imediata de Deus é limitado a uma vez por ano, e ainda
+        assim apenas ao sumo sacerdote. Todavia, no Éden o primeiro
+        homem e a primeira mulher têm o privilégio único de relacionar-
+        se face a face com Deus, sem medo ou vergonha. Em contraste
+        com esse histórico, o relato da desobediência é bem mais trágico.
       </p>
     </>,
     <>
       <h2 className="text-xl font-semibold mb-3">O PRIMEIRO SACRIFÍCIO</h2>
       <p className="mb-2">
-        “Então os olhos de ambos se abriram; e, percebendo que estavam nus, costuraram folhas de figueira
-        e fizeram cintas para si.” (Gênesis 3:7)
+        “Então os olhos de ambos se abriram; e, percebendo que estavam nus,
+        costuraram folhas de figueira e fizeram cintas para si.”
+        <span className="not-italic"> (Gênesis 3:7)</span>
       </p>
       <p className="mb-2">
-        Para, como o escritor do Livro de Hebreus diz: "Sem derramamento de sangue não há remissão [do pecado]"
-        (Heb. 9:22). “Pois o salário do pecado é a morte” (Romanos 6:23)
+        Para, como o escritor do Livro de Hebreus diz: "Sem
+        derramamento de sangue não há remissão [do pecado]" (Heb.
+        9:22).
+      </p>
+      <p className="mb-2">“Pois o salário do pecado é a morte” (Romanos 6:23)</p>
+      <p className="mb-2">
+        Gn 3.21: E fez o SENHOR Deus a Adão e a sua mulher túnicas de
+        peles e os vestiu. Ao fazer vestes de pele, Deus graciosamente
+        providenciou para a necessidade humana de um modo superior àquele
+        que Adão e Eva tinham feito com folhas de figueira.
       </p>
       <p className="mb-2">
-        Gn 3.21: E fez o SENHOR Deus a Adão e a sua mulher túnicas de peles e os vestiu. Ao fazer vestes de pele,
-        Deus graciosamente providenciou para a necessidade humana de um modo superior àquele que Adão e Eva tinham
-        feito com folhas de figueira.
+        O uso de peles de animais antecipa o sistema do AT de sacrifícios
+        de animais (Lv 1:3-7; Nm 15:1-31).
       </p>
       <p className="mb-2">
-        O uso de peles de animais antecipa o sistema do AT de sacrifícios de animais (Lv 1:3-7; Nm 15:1-31).
-        No NT, Paulo falou de um dia quando Deus revestiria Seu povo de imortalidade (1 Co 15:53-54; 2 Co 5:4; Ef 4:24),
-        provendo assim a completa anulação da maldição do pecado da humanidade.
+        No NT, Paulo falou de um dia quando Deus revestiria Seu povo de
+        imortalidade (1 Co 15:53-54; 2 Co 5:4; Efésios 4:24), provendo
+        assim a completa anulação da maldição do pecado da
+        humanidade.
       </p>
     </>,
   ],

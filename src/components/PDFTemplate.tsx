@@ -1,8 +1,8 @@
 import React from "react";
 
 export interface CoverProps {
-  background: string; // ex.: '/capa-bg.png'
-  logo: string;       // ex.: '/logo-edd.png'
+  background: string; // ex.: '/capa-bg.png' ou URL
+  logo: string;       // ex.: '/logo-edd.png' ou URL
   lessonNumber: string; // "M3 | Aula 06"
   topic: string;        // "Origem das Nações"
   signatureTitle?: string;    // "GÊNESIS , O INÍCIO DE TUDO."
@@ -34,8 +34,8 @@ export const CoverPage: React.FC<CoverProps> = ({
         backgroundColor: "#ffffff",
       }}
     >
-      {/* Overlay sutil para legibilidade do texto */}
-      <div className="absolute inset-0 bg-white/35"></div>
+      {/* Overlay sutil para legibilidade */}
+      <div className="absolute inset-0 bg-white/35 pointer-events-none" />
 
       {/* Logo no topo direito */}
       {showLogo && (
@@ -43,10 +43,7 @@ export const CoverPage: React.FC<CoverProps> = ({
           src={logo || "/favicon.ico"}
           alt="Logo"
           className="absolute top-6 right-6 w-28 h-auto object-contain"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = "/favicon.ico";
-            setShowLogo(true);
-          }}
+          onError={() => setShowLogo(false)}
         />
       )}
 
@@ -55,12 +52,10 @@ export const CoverPage: React.FC<CoverProps> = ({
         <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
           {lessonNumber}
         </h1>
-        <h2 className="mt-3 text-3xl font-semibold text-gray-800">
-          {topic}
-        </h2>
+        <h2 className="mt-3 text-3xl font-semibold text-gray-800">{topic}</h2>
       </div>
 
-      {/* Assinatura canto inferior direito */}
+      {/* Assinatura canto inferior direito (texto) */}
       {(signatureTitle || signatureSubtitle) && (
         <div className="absolute bottom-8 right-8 text-right">
           {signatureTitle && (
@@ -69,9 +64,7 @@ export const CoverPage: React.FC<CoverProps> = ({
             </div>
           )}
           {signatureSubtitle && (
-            <div className="text-xs text-gray-600">
-              {signatureSubtitle}
-            </div>
+            <div className="text-xs text-gray-600">{signatureSubtitle}</div>
           )}
         </div>
       )}
@@ -82,12 +75,51 @@ export const CoverPage: React.FC<CoverProps> = ({
 export interface ContentProps {
   children: React.ReactNode;
   className?: string;
+  backgroundImage?: string; // marca d'água de fundo (não-capa)
+  footerLogo?: string;      // logo central no rodapé (todas as páginas de conteúdo)
 }
 
-export const ContentPage: React.FC<ContentProps> = ({ children, className }) => {
+export const ContentPage: React.FC<ContentProps> = ({
+  children,
+  className,
+  backgroundImage,
+  footerLogo,
+}) => {
   return (
-    <div className={classNames("page w-[210mm] h-[297mm] mx-auto p-10 bg-white shadow-md print:shadow-none", className)}>
-      {children}
+    <div
+      className={classNames(
+        "page w-[210mm] h-[297mm] mx-auto p-10 bg-white shadow-md print:shadow-none relative overflow-hidden",
+        className
+      )}
+    >
+      {/* Marca d'água de fundo (desabilita clique e bem sutil) */}
+      {backgroundImage && (
+        <div
+          className="absolute inset-0 pointer-events-none opacity-10"
+          style={{
+            backgroundImage: `url(${backgroundImage})`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            backgroundSize: "60%",
+          }}
+        />
+      )}
+
+      {/* Conteúdo */}
+      <div className="relative z-10">
+        {children}
+      </div>
+
+      {/* Logo central no rodapé */}
+      {footerLogo && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+          <img
+            src={footerLogo}
+            alt="Assinatura"
+            className="w-36 h-auto object-contain opacity-90"
+          />
+        </div>
+      )}
     </div>
   );
 };
