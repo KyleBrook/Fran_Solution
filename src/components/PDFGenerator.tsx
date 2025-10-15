@@ -4,15 +4,14 @@ import AutoPaginator from "./AutoPaginator";
 
 export interface PDFData {
   cover: CoverProps;
-  pages?: React.ReactNode[];         // caminho antigo (páginas já divididas)
-  blocks?: React.ReactNode[];        // novo caminho (paginação automática por blocos)
-  contentBackground?: string;        // background total nas páginas internas
-  footerLogo?: string;               // logo central no rodapé das páginas internas
-  pageTopRightLogo?: string;         // logo no canto superior direito em todas as páginas internas
+  pages?: React.ReactNode[];
+  blocks?: React.ReactNode[];
+  contentBackground?: string;
+  pageTopRightLogo?: string;
 }
 
 const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
-  const { cover, pages, blocks, contentBackground, footerLogo, pageTopRightLogo } = data;
+  const { cover, pages, blocks, contentBackground, pageTopRightLogo } = data;
 
   return (
     <>
@@ -24,7 +23,6 @@ const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
             <ContentPage
               key={index}
               backgroundImage={contentBackground}
-              footerLogo={footerLogo}
               topRightLogo={pageTopRightLogo}
             >
               {children}
@@ -36,7 +34,6 @@ const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
           <ContentPage
             key={index}
             backgroundImage={contentBackground}
-            footerLogo={footerLogo}
             topRightLogo={pageTopRightLogo}
           >
             {content}

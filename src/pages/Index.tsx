@@ -125,13 +125,8 @@ const sampleData: PDFData = {
     signatureTitle: "GÊNESIS , O INÍCIO DE TUDO.",
     signatureSubtitle: "COM LUMA ELPIDIO",
   },
-  // Background total das páginas internas (exceto capa)
   contentBackground: "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/fundo%20imagens%20luma.png",
-  // Logo no canto superior direito em todas as páginas internas
   pageTopRightLogo: "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
-  // Logo de rodapé centralizado em todas as páginas internas
-  footerLogo: "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Estudantes%20de%20Deus.png",
-  // Usamos blocos para paginação automática
   blocks,
 };
 

@@ -44,10 +44,10 @@ export const CoverPage: React.FC<CoverProps> = ({
         />
       )}
       <div className="relative px-8 text-center">
-        <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
+        <h1 className="text-6xl md:text-7xl font-extrabold tracking-tight text-gray-900">
           {lessonNumber}
         </h1>
-        <h2 className="mt-3 text-3xl font-semibold text-gray-800">{topic}</h2>
+        <h2 className="mt-4 text-4xl font-semibold text-gray-800">{topic}</h2>
       </div>
       {(signatureTitle || signatureSubtitle) && (
         <div className="absolute bottom-8 right-8 text-right">
@@ -69,7 +69,6 @@ export interface ContentProps {
   children: React.ReactNode;
   className?: string;
   backgroundImage?: string;
-  footerLogo?: string;
   topRightLogo?: string;
 }
 
@@ -77,7 +76,6 @@ export const ContentPage: React.FC<ContentProps> = ({
   children,
   className,
   backgroundImage,
-  footerLogo,
   topRightLogo,
 }) => {
   return (
@@ -104,15 +102,6 @@ export const ContentPage: React.FC<ContentProps> = ({
       <div className="relative z-10 presentation-content">
         {children}
       </div>
-      {footerLogo && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
-          <img
-            src={footerLogo}
-            alt="Assinatura"
-            className="w-36 h-auto object-contain opacity-90"
-          />
-        </div>
-      )}
     </div>
   );
 };
