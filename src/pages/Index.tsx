@@ -1,6 +1,8 @@
 import React from "react";
 import PDFGenerator, { PDFData } from "@/components/PDFGenerator";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const blocks: React.ReactNode[] = [
   <h1 key="t1">Aula 6 - Origem das Nações</h1>,
@@ -133,7 +135,12 @@ const sampleData: PDFData = {
 const Index = () => {
   return (
     <div className="min-h-screen w-full bg-white py-8">
-      <div className="flex flex-col items-center gap-8">
+      <div className="flex flex-col items-center gap-6">
+        <div className="flex items-center gap-3">
+          <Button asChild>
+            <Link to="/criar-pdf">Criar PDF personalizado</Link>
+          </Button>
+        </div>
         <PDFGenerator data={sampleData} />
         <MadeWithDyad />
       </div>
