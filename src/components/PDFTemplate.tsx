@@ -75,8 +75,9 @@ export const CoverPage: React.FC<CoverProps> = ({
 export interface ContentProps {
   children: React.ReactNode;
   className?: string;
-  backgroundImage?: string; // marca d'água de fundo (não-capa)
+  backgroundImage?: string; // background total nas páginas internas
   footerLogo?: string;      // logo central no rodapé (todas as páginas de conteúdo)
+  topRightLogo?: string;    // logo no canto superior direito (todas as páginas de conteúdo)
 }
 
 export const ContentPage: React.FC<ContentProps> = ({
@@ -84,6 +85,7 @@ export const ContentPage: React.FC<ContentProps> = ({
   className,
   backgroundImage,
   footerLogo,
+  topRightLogo,
 }) => {
   return (
     <div
@@ -91,17 +93,20 @@ export const ContentPage: React.FC<ContentProps> = ({
         "page w-[210mm] h-[297mm] mx-auto p-10 bg-white shadow-md print:shadow-none relative overflow-hidden",
         className
       )}
+      style={{
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundColor: "#ffffff",
+      }}
     >
-      {/* Marca d'água de fundo (desabilita clique e bem sutil) */}
-      {backgroundImage && (
-        <div
-          className="absolute inset-0 pointer-events-none opacity-10"
-          style={{
-            backgroundImage: `url(${backgroundImage})`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            backgroundSize: "60%",
-          }}
+      {/* Logo no topo direito nas páginas internas */}
+      {topRightLogo && (
+        <img
+          src={topRightLogo}
+          alt="Logo da página"
+          className="absolute top-6 right-6 w-24 h-auto object-contain"
         />
       )}
 
