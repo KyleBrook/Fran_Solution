@@ -11,12 +11,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AutoPaginator from "@/components/AutoPaginator";
-import { ContentPage } from "@/components/PDFTemplate";
+import PDFGenerator, { PDFData } from "@/components/PDFGenerator";
 
 const sizeOptionsTitle = [40, 48, 56, 64, 72, 80];
 const sizeOptionsSubtitle = [20, 22, 24, 28, 32, 36];
 const sizeOptionsBody = [16, 18, 20, 22, 24, 26];
+
+const DEFAULTS = {
+  coverBackground:
+    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Background.png",
+  logo:
+    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
+  contentBackground:
+    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/fundo%20imagens%20luma.png",
+  pageTopRightLogo:
+    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
+};
 
 const CreatePDF: React.FC = () => {
   const [title, setTitle] = React.useState<string>("Meu Título");
@@ -74,6 +84,23 @@ const CreatePDF: React.FC = () => {
     return items;
   }, [title, subtitle, body, titleSize, subtitleSize, bodySize]);
 
+  const [generated, setGenerated] = React.useState<PDFData | null>(null);
+
+  const handleGenerate = () => {
+    const data: PDFData = {
+      cover: {
+        background: DEFAULTS.coverBackground,
+        logo: DEFAULTS.logo,
+        lessonNumber: title || " ",
+        topic: subtitle || " ",
+      },
+      contentBackground: DEFAULTS.contentBackground,
+      pageTopRightLogo: DEFAULTS.pageTopRightLogo,
+      blocks,
+    };
+    setGenerated(data);
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -85,7 +112,7 @@ const CreatePDF: React.FC = () => {
           {/* Formulário */}
           <Card className="w-full lg:w-[420px] print:hidden">
             <CardHeader>
-              <CardTitle>Configurar PDF</CardTitle>
+              <CardTitle>Montar PDF</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Título */}
@@ -185,21 +212,27 @@ const CreatePDF: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex items-center justify-end">
-                <Button onClick={handlePrint}>Imprimir</Button>
+              <div className="flex items-center justify-end gap-2">
+                <Button onClick={handleGenerate}>Gerar PDF</Button>
               </div>
             </CardContent>
           </Card>
 
           {/* Prévia */}
           <div className="flex-1">
+            <div className="flex justify-end mb-3 gap-2 print:hidden">
+              <Button variant="secondary" onClick={handlePrint} disabled={!generated}>
+                Imprimir
+              </Button>
+            </div>
             <div className="print:block">
-              <AutoPaginator
-                blocks={blocks}
-                renderPage={(children, index) => (
-                  <ContentPage key={index}>{children}</ContentPage>
-                )}
-              />
+              {generated ? (
+                <PDFGenerator data={generated} />
+              ) : (
+                <div className="w-full h-[420px] border rounded-md grid place-items-center text-center text-sm text-muted-foreground">
+                  Preencha os campos ao lado e clique em “Gerar PDF” para montar a capa e as páginas.
+                </div>
+              )}
             </div>
           </div>
         </div>
