@@ -1,12 +1,12 @@
 import React from "react";
 
 export interface CoverProps {
-  background: string; // ex.: '/capa-bg.png' ou URL
-  logo: string;       // ex.: '/logo-edd.png' ou URL
-  lessonNumber: string; // "M3 | Aula 06"
-  topic: string;        // "Origem das Nações"
-  signatureTitle?: string;    // "GÊNESIS , O INÍCIO DE TUDO."
-  signatureSubtitle?: string; // "COM LUMA ELPIDIO"
+  background: string;
+  logo: string;
+  lessonNumber: string;
+  topic: string;
+  signatureTitle?: string;
+  signatureSubtitle?: string;
 }
 
 function classNames(...c: Array<string | false | null | undefined>) {
@@ -68,9 +68,9 @@ export const CoverPage: React.FC<CoverProps> = ({
 export interface ContentProps {
   children: React.ReactNode;
   className?: string;
-  backgroundImage?: string; // background total nas páginas internas
-  footerLogo?: string;      // logo central no rodapé (todas as páginas de conteúdo)
-  topRightLogo?: string;    // logo no canto superior direito (todas as páginas de conteúdo)
+  backgroundImage?: string;
+  footerLogo?: string;
+  topRightLogo?: string;
 }
 
 export const ContentPage: React.FC<ContentProps> = ({
@@ -101,7 +101,7 @@ export const ContentPage: React.FC<ContentProps> = ({
           className="absolute top-6 right-6 w-24 h-auto object-contain"
         />
       )}
-      <div className="relative z-10 prose prose-lg md:prose-xl max-w-none">
+      <div className="relative z-10 presentation-content">
         {children}
       </div>
       {footerLogo && (

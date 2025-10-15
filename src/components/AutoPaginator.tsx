@@ -48,7 +48,6 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
 
   React.useEffect(() => {
     const onResize = () => {
-      // Recalcula ao redimensionar para manter a paginação ajustada
       paginate();
     };
     window.addEventListener("resize", onResize);
@@ -61,10 +60,10 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
         <React.Fragment key={i}>{renderPage(content, i)}</React.Fragment>
       ))}
 
-      {/* Contêiner de medição oculto, com a mesma largura/typography do conteúdo real */}
+      {/* Contêiner de medição oculto com a mesma largura/tipografia do conteúdo real */}
       <div
         ref={measureRef}
-        className="absolute opacity-0 pointer-events-none -z-50 prose prose-lg md:prose-xl max-w-none"
+        className="absolute opacity-0 pointer-events-none -z-50 presentation-content"
         style={{
           visibility: "hidden",
           width: "calc(210mm - 64px)", // 210mm menos padding lateral (p-8 = 32px x 2)
