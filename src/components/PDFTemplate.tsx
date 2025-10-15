@@ -34,10 +34,7 @@ export const CoverPage: React.FC<CoverProps> = ({
         backgroundColor: "#ffffff",
       }}
     >
-      {/* Overlay sutil para legibilidade */}
       <div className="absolute inset-0 bg-white/35 pointer-events-none" />
-
-      {/* Logo no topo direito */}
       {showLogo && (
         <img
           src={logo || "/favicon.ico"}
@@ -46,16 +43,12 @@ export const CoverPage: React.FC<CoverProps> = ({
           onError={() => setShowLogo(false)}
         />
       )}
-
-      {/* Título central */}
       <div className="relative px-8 text-center">
         <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
           {lessonNumber}
         </h1>
         <h2 className="mt-3 text-3xl font-semibold text-gray-800">{topic}</h2>
       </div>
-
-      {/* Assinatura canto inferior direito (texto) */}
       {(signatureTitle || signatureSubtitle) && (
         <div className="absolute bottom-8 right-8 text-right">
           {signatureTitle && (
@@ -90,7 +83,7 @@ export const ContentPage: React.FC<ContentProps> = ({
   return (
     <div
       className={classNames(
-        "page w-[210mm] h-[297mm] mx-auto p-10 bg-white shadow-md print:shadow-none relative overflow-hidden",
+        "page w-[210mm] h-[297mm] mx-auto p-8 bg-white shadow-md print:shadow-none relative overflow-hidden",
         className
       )}
       style={{
@@ -101,7 +94,6 @@ export const ContentPage: React.FC<ContentProps> = ({
         backgroundColor: "#ffffff",
       }}
     >
-      {/* Logo no topo direito nas páginas internas */}
       {topRightLogo && (
         <img
           src={topRightLogo}
@@ -109,13 +101,9 @@ export const ContentPage: React.FC<ContentProps> = ({
           className="absolute top-6 right-6 w-24 h-auto object-contain"
         />
       )}
-
-      {/* Conteúdo */}
-      <div className="relative z-10">
+      <div className="relative z-10 prose prose-lg md:prose-xl max-w-none">
         {children}
       </div>
-
-      {/* Logo central no rodapé */}
       {footerLogo && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
           <img
