@@ -21,10 +21,19 @@ import {
 } from "@/utils/toast"
 import { supabase } from "@/integrations/supabase/client"
 import ExportPDFButton from "@/components/ExportPDFButton"
+import ImageBlock from "@/components/ImageBlock"
+
+type ImageItem = {
+  src: string
+  caption?: string
+  width: number // percent
+  afterParagraph: number // 0..N (0 = antes do 1º parágrafo, N = após o último)
+}
 
 const sizeOptionsTitle = [40, 48, 56, 64, 72, 80]
 const sizeOptionsSubtitle = [20, 22, 24, 28, 32, 36]
 const sizeOptionsBody = [16, 18, 20, 22, 24, 26]
+const widthOptions = [40, 50, 60, 70, 80, 90, 100]
 
 const DEFAULTS = {
   coverBackground:
@@ -53,41 +62,104 @@ export default function CreatePDF() {
   const [loadingAI, setLoadingAI] = React.useState(false)
   const [generated, setGenerated] = React.useState<PDFData | null>(null)
 
-  const blocks = React.useMemo<React.ReactNode[]>(() => {
-    const items: React.ReactNode[] = []
-    if (title.trim())
-      items.push(
-        <h1 key="title" style={{ fontSize: `${titleSize}px` }}>
-          {title}
-        </h1>
-      )
-    if (subtitle.trim())
-      items.push(
-        <h2 key="subtitle" style={{ fontSize: `${subtitleSize}px` }}>
-          {subtitle}
-        </h2>
-      )
-    const paras = body
+  // Imagens
+  const [images, setImages] = React.useState<ImageItem[]>([])
+  const [imgUrl, setImgUrl] = React.useState("")
+  const [imgCaption, setImgCaption] = React.useState("")
+  const [imgWidth, setImgWidth] = React.useState(80)
+  const [imgAfterPara, setImgAfterPara] = React.useState(0)
+
+  const paragraphs = React.useMemo(() => {
+    return body
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter(Boolean)
-    if (paras.length === 0) {
+  }, [body])
+
+  function composeBlocks(
+    t: string,
+    s: string,
+    paras: string[],
+    sizes: { t: number; s: number; b: number },
+    imgs: ImageItem[]
+  ) {
+    const items: React.ReactNode[] = []
+
+    if (t.trim()) items.push(<h1 key="title" style={{ fontSize: `${sizes.t}px` }}>{t}</h1>)
+    if (s.trim()) items.push(<h2 key="subtitle" style={{ fontSize: `${sizes.s}px` }}>{s}</h2>)
+
+    // imagens com afterParagraph === 0 (antes do primeiro parágrafo)
+    imgs
+      .filter((im) => im.afterParagraph === 0)
+      .forEach((im, idx) => {
+        items.push(
+          <ImageBlock
+            key={`img-0-${idx}-${im.src}`}
+            src={im.src}
+            caption={im.caption}
+            widthPercent={im.width}
+            align="center"
+          />
+        )
+      })
+
+    paras.forEach((p, i) => {
       items.push(
-        <p key="empty" style={{ fontSize: `${bodySize}px` }}>
+        <p key={`p-${i}`} style={{ fontSize: `${sizes.b}px` }}>
+          {p}
+        </p>
+      )
+
+      imgs
+        .filter((im) => im.afterParagraph === i + 1)
+        .forEach((im, idx) => {
+          items.push(
+            <ImageBlock
+              key={`img-${i + 1}-${idx}-${im.src}`}
+              src={im.src}
+              caption={im.caption}
+              widthPercent={im.width}
+              align="center"
+            />
+          )
+        })
+    })
+
+    // imagens após o último parágrafo
+    imgs
+      .filter((im) => im.afterParagraph === paras.length)
+      .forEach((im, idx) => {
+        items.push(
+          <ImageBlock
+            key={`img-end-${idx}-${im.src}`}
+            src={im.src}
+            caption={im.caption}
+            widthPercent={im.width}
+            align="center"
+          />
+        )
+      })
+
+    if (paras.length === 0 && imgs.length === 0) {
+      items.push(
+        <p key="empty" style={{ fontSize: `${sizes.b}px` }}>
           Adicione seu texto.
         </p>
       )
-    } else {
-      paras.forEach((p, i) =>
-        items.push(
-          <p key={`p-${i}`} style={{ fontSize: `${bodySize}px` }}>
-            {p}
-          </p>
-        )
-      )
     }
+
     return items
-  }, [title, subtitle, body, titleSize, subtitleSize, bodySize])
+  }
+
+  const blocks = React.useMemo<React.ReactNode[]>(() => {
+    return composeBlocks(
+      title,
+      subtitle,
+      paragraphs,
+      { t: titleSize, s: subtitleSize, b: bodySize },
+      images
+    )
+  }, [title, subtitle, paragraphs, titleSize, subtitleSize, bodySize, images])
 
   function buildPDFData(fromBlocks: React.ReactNode[]) {
     return {
@@ -136,25 +208,13 @@ export default function CreatePDF() {
       setTitle(aiTitle)
       setSubtitle(aiSubtitle)
       setBody(paras.join("\n\n"))
-      const aiBlocks: React.ReactNode[] = []
-      if (aiTitle.trim())
-        aiBlocks.push(
-          <h1 key="ai-title" style={{ fontSize: `${titleSize}px` }}>
-            {aiTitle}
-          </h1>
-        )
-      if (aiSubtitle.trim())
-        aiBlocks.push(
-          <h2 key="ai-sub" style={{ fontSize: `${subtitleSize}px` }}>
-            {aiSubtitle}
-          </h2>
-        )
-      paras.forEach((p, i) =>
-        aiBlocks.push(
-          <p key={`ai-p-${i}`} style={{ fontSize: `${bodySize}px` }}>
-            {p}
-          </p>
-        )
+
+      const aiBlocks = composeBlocks(
+        aiTitle,
+        aiSubtitle,
+        paras,
+        { t: titleSize, s: subtitleSize, b: bodySize },
+        images
       )
       setGenerated(buildPDFData(aiBlocks))
       showSuccess("Conteúdo IA aplicado")
@@ -171,6 +231,31 @@ export default function CreatePDF() {
     const base = [title, subtitle].filter(Boolean).join(" - ") || "documento"
     return `${base}.pdf`.replace(/\s+/g, "_").toLowerCase()
   }, [title, subtitle])
+
+  const handleAddImage = () => {
+    if (!imgUrl.trim()) {
+      showError("Informe a URL da imagem.")
+      return
+    }
+    const pos = Math.max(0, Math.min(paragraphs.length, imgAfterPara))
+    const newItem: ImageItem = {
+      src: imgUrl.trim(),
+      caption: imgCaption.trim() || undefined,
+      width: imgWidth,
+      afterParagraph: pos,
+    }
+    setImages((prev) => [...prev, newItem])
+    setImgUrl("")
+    setImgCaption("")
+    setImgWidth(80)
+    setImgAfterPara(0)
+    showSuccess("Imagem adicionada!")
+  }
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index))
+    showSuccess("Imagem removida.")
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -222,6 +307,7 @@ export default function CreatePDF() {
                 placeholder="Adicione instruções extras para a IA refinar seu texto"
               />
             </div>
+
             <div className="flex space-x-4">
               <div className="flex-1">
                 <Label htmlFor="titleSize">Tamanho do Título</Label>
@@ -292,7 +378,98 @@ export default function CreatePDF() {
                 onChange={(e) => setBody(e.target.value)}
                 rows={6}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Dica: separe parágrafos com uma linha em branco. Você pode inserir imagens nas posições desejadas logo abaixo.
+              </p>
             </div>
+
+            {/* Seção de Imagens */}
+            <div className="rounded-lg border p-4 bg-white">
+              <h3 className="font-semibold mb-3">Imagens no conteúdo</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Label htmlFor="imgUrl">URL da imagem</Label>
+                  <Input
+                    id="imgUrl"
+                    placeholder="https://exemplo.com/imagem.png"
+                    value={imgUrl}
+                    onChange={(e) => setImgUrl(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="imgWidth">Largura (%)</Label>
+                  <Select
+                    value={String(imgWidth)}
+                    onValueChange={(v) => setImgWidth(Number(v))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={`${imgWidth}%`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {widthOptions.map((w) => (
+                        <SelectItem key={w} value={String(w)}>{w}%</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="imgAfter">Posição</Label>
+                  <Select
+                    value={String(imgAfterPara)}
+                    onValueChange={(v) => setImgAfterPara(Number(v))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Posição" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Antes do 1º parágrafo</SelectItem>
+                      {Array.from({ length: Math.max(1, paragraphs.length) }).map((_, i) => (
+                        <SelectItem key={i + 1} value={String(i + 1)}>
+                          Após o parágrafo {i + 1}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="imgCaption">Legenda (opcional)</Label>
+                  <Input
+                    id="imgCaption"
+                    placeholder="Legenda da imagem"
+                    value={imgCaption}
+                    onChange={(e) => setImgCaption(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end mt-3">
+                <Button variant="secondary" onClick={handleAddImage}>
+                  Adicionar imagem
+                </Button>
+              </div>
+
+              {images.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Imagens adicionadas</h4>
+                  <ul className="space-y-2">
+                    {images.map((im, idx) => (
+                      <li key={`${im.src}-${idx}`} className="flex items-center justify-between rounded-md border p-2">
+                        <div className="text-sm">
+                          <div className="font-medium break-all">{im.src}</div>
+                          <div className="text-muted-foreground">
+                            {im.width}% • Após parágrafo {im.afterParagraph || 0}{im.afterParagraph === 0 ? " (início)" : ""}
+                            {im.caption ? ` • "${im.caption}"` : ""}
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleRemoveImage(idx)}>
+                          Remover
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
               <Button onClick={handleGenerate}>Gerar PDF</Button>
               <Button onClick={handleGenerateWithAI} disabled={loadingAI}>

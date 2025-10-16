@@ -62,6 +62,38 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
     return () => window.removeEventListener("resize", onResize);
   }, [paginate]);
 
+  // Recalcular quando imagens terminarem de carregar dentro do contêiner de medição
+  React.useEffect(() => {
+    const container = measureRef.current;
+    if (!container) return;
+
+    const imgs = Array.from(container.querySelectorAll("img"));
+    if (imgs.length === 0) return;
+
+    let cancelled = false;
+    const handle = () => {
+      if (!cancelled) paginate();
+    };
+
+    imgs.forEach((img) => {
+      if (img.complete) return;
+      img.addEventListener("load", handle);
+      img.addEventListener("error", handle);
+    });
+
+    // Fallback: garantir reflow após pequeno atraso
+    const t = setTimeout(handle, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      imgs.forEach((img) => {
+        img.removeEventListener("load", handle);
+        img.removeEventListener("error", handle);
+      });
+    };
+  }, [blocks, paginate]);
+
   return (
     <>
       {pages.map((content, i) => (
