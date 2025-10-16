@@ -13,6 +13,43 @@ type RequestBody = {
   language?: string; // e.g., 'pt-BR'
 };
 
+function createFallbackContent({
+  title,
+  subtitle,
+  body,
+  language = "pt-BR",
+}: RequestBody) {
+  const normTitle = (title || "Documento").toString().trim();
+  const normSubtitle = (subtitle || "").toString().trim();
+
+  // Divide o texto em parágrafos considerando linhas em branco
+  const paragraphs =
+    (body || "")
+      .split(/\n\s*\n/g)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+  // Se não houver corpo, cria alguns parágrafos curtos de exemplo
+  const defaultParas =
+    language.startsWith("pt")
+      ? [
+          "Este é um conteúdo de exemplo gerado localmente quando a IA não está disponível.",
+          "Adicione seu texto no campo indicado para que possamos organizá-lo automaticamente em parágrafos.",
+          "Você pode imprimir o PDF ou ajustar tamanhos de título, subtítulo e corpo conforme preferir.",
+        ]
+      : [
+          "This is a locally generated sample when AI is unavailable.",
+          "Add your text and we'll automatically split it into clear paragraphs.",
+          "You can print the PDF or adjust title, subtitle and body sizes as you like.",
+        ];
+
+  return {
+    title: normTitle,
+    subtitle: normSubtitle,
+    paragraphs: paragraphs.length ? paragraphs : defaultParas,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -25,25 +62,31 @@ serve(async (req) => {
     });
   }
 
+  const requestData = (await req.json()) as RequestBody;
+  const { title, subtitle, body, language = "pt-BR" } = requestData || {};
+
   const apiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "OPENAI_API_KEY not set" }), {
-      status: 500,
+  const hasKey = !!apiKey && apiKey.length > 0;
+
+  // Se não houver chave, retorna conteúdo local organizado (fallback)
+  if (!hasKey) {
+    const fallback = createFallbackContent({ title, subtitle, body, language });
+    return new Response(JSON.stringify(fallback), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const { title, subtitle, body, language = "pt-BR" } = (await req.json()) as RequestBody;
+  try {
+    const userText = [
+      title ? `Título: ${title}` : undefined,
+      subtitle ? `Subtítulo: ${subtitle}` : undefined,
+      body ? `Texto base:\n${body}` : undefined,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
 
-  const userText = [
-    title ? `Título: ${title}` : undefined,
-    subtitle ? `Subtítulo: ${subtitle}` : undefined,
-    body ? `Texto base:\n${body}` : undefined,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
-  const systemPrompt = `Você é um assistente que organiza conteúdo para um PDF com capa (título/subtítulo) e corpo do texto.
+    const systemPrompt = `Você é um assistente que organiza conteúdo para um PDF com capa (título/subtítulo) e corpo do texto.
 Responda estritamente em JSON válido, sem comentários, sem markdown, no idioma solicitado.
 Formato de saída:
 {
@@ -57,51 +100,56 @@ Regras:
 - Não inclua quebras manuais além da divisão por parágrafos.
 - Mantenha o idioma: ${language}.`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.6,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content:
-            userText ||
-            `Gere um conteúdo de exemplo curto em ${language} (3 a 6 parágrafos) sobre um tema motivacional cristão.`,
-        },
-      ],
-    }),
-  });
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0.6,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content:
+              userText ||
+              `Gere um conteúdo de exemplo curto em ${language} (3 a 6 parágrafos) sobre um tema motivacional cristão.`,
+          },
+        ],
+      }),
+    });
 
-  if (!response.ok) {
-    const text = await response.text();
-    return new Response(JSON.stringify({ error: "OpenAI error", detail: text }), {
-      status: 500,
+    // Se a OpenAI falhar, usa fallback local
+    if (!response.ok) {
+      const fallback = createFallbackContent({ title, subtitle, body, language });
+      return new Response(JSON.stringify(fallback), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const result = await response.json();
+    const content: string = result?.choices?.[0]?.message?.content ?? "";
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (_e) {
+      parsed = createFallbackContent({ title, subtitle, body, language });
+    }
+
+    return new Response(JSON.stringify(parsed), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (_err) {
+    // Qualquer erro inesperado: retorna fallback local
+    const fallback = createFallbackContent({ title, subtitle, body, language });
+    return new Response(JSON.stringify(fallback), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
-  const result = await response.json();
-  const content: string = result?.choices?.[0]?.message?.content ?? "";
-
-  let parsed;
-  try {
-    parsed = JSON.parse(content);
-  } catch (_e) {
-    parsed = {
-      title: title || "Documento",
-      subtitle: subtitle || "",
-      paragraphs: [content || body || ""].filter((x) => !!x),
-    };
-  }
-
-  return new Response(JSON.stringify(parsed), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
 });
