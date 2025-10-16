@@ -1,5 +1,5 @@
 import React from "react";
-import { PAGE_CONTENT_WIDTH_CALC } from "@/constants/layout";
+import { PAGE_CONTENT_WIDTH_CALC, CONTENT_INSET_PX } from "@/constants/layout";
 
 type AutoPaginatorProps = {
   blocks: React.ReactNode[];
@@ -24,13 +24,16 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
     const childrenEls = Array.from(container.children) as HTMLElement[];
     const heights = childrenEls.map((el) => el.offsetHeight);
 
+    // Considerar o inset vertical aplicado dentro da página
+    const availableHeight = Math.max(0, pageContentMaxHeight - CONTENT_INSET_PX * 2);
+
     const newPages: React.ReactNode[][] = [];
     let current: React.ReactNode[] = [];
     let acc = 0;
 
     heights.forEach((h, i) => {
       const block = blocks[i];
-      if (acc + h > pageContentMaxHeight) {
+      if (acc + h > availableHeight) {
         if (current.length) newPages.push(current);
         current = [block];
         acc = h;
@@ -67,7 +70,7 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
         className="absolute opacity-0 pointer-events-none -z-50 presentation-content"
         style={{
           visibility: "hidden",
-          width: PAGE_CONTENT_WIDTH_CALC, // 210mm menos padding lateral atualizado
+          width: PAGE_CONTENT_WIDTH_CALC, // largura da caixa de texto efetiva
         }}
       >
         {blocks.map((block, i) => (

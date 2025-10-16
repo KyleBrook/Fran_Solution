@@ -1,5 +1,5 @@
 import React from "react";
-import { PAGE_PADDING_PX } from "@/constants/layout";
+import { PAGE_PADDING_PX, CONTENT_INSET_PX } from "@/constants/layout";
 
 export interface CoverProps {
   background: string;
@@ -33,6 +33,7 @@ export const CoverPage: React.FC<CoverProps> = ({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundColor: "#ffffff",
+        // Mantém padding externo pequeno para a logo
         padding: PAGE_PADDING_PX,
       }}
     >
@@ -98,6 +99,7 @@ export const ContentPage: React.FC<ContentProps> = ({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundColor: "#ffffff",
+        // Mantém padding externo da página pequeno para a logo
         padding: PAGE_PADDING_PX,
       }}
     >
@@ -109,8 +111,15 @@ export const ContentPage: React.FC<ContentProps> = ({
           style={{ top: PAGE_PADDING_PX, right: PAGE_PADDING_PX }}
         />
       )}
-      <div className="relative z-10 presentation-content">
-        {children}
+
+      {/* Caixa de texto com INSET adicional para margens internas maiores */}
+      <div className="relative z-10">
+        <div
+          className="presentation-content"
+          style={{ padding: CONTENT_INSET_PX }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

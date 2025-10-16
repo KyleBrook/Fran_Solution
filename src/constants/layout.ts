@@ -1,11 +1,12 @@
 export const PAGE_WIDTH_MM = 210;
 export const PAGE_HEIGHT_MM = 297;
 
-// Padding base usado anteriormente (Tailwind p-8 = 32px)
+// Padding externo da página (mantém a logo próxima da borda como antes)
 export const PAGE_BASE_PADDING_PX = 32;
+export const PAGE_PADDING_PX = PAGE_BASE_PADDING_PX;
 
-// Aumento de 100% nas margens para dar mais espaço interno
-export const PAGE_PADDING_PX = PAGE_BASE_PADDING_PX * 2; // 64px
+// Inset interno apenas para o texto (margens maiores do texto em relação às bordas A4)
+export const CONTENT_INSET_PX = 48;
 
-// Largura útil do conteúdo considerando padding em ambos os lados
-export const PAGE_CONTENT_WIDTH_CALC = `calc(${PAGE_WIDTH_MM}mm - ${PAGE_PADDING_PX * 2}px)`;
+// Largura útil do conteúdo considerando padding externo + inset interno (ambos os lados)
+export const PAGE_CONTENT_WIDTH_CALC = `calc(${PAGE_WIDTH_MM}mm - ${(PAGE_PADDING_PX + CONTENT_INSET_PX) * 2}px)`;
