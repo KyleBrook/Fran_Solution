@@ -5,6 +5,8 @@ type AutoPaginatorProps = {
   blocks: React.ReactNode[];
   pageContentMaxHeight?: number; // altura disponível para o conteúdo por página (px)
   renderPage: (children: React.ReactNode[], index: number) => React.ReactNode;
+  justifyText?: boolean;
+  language?: string;
 };
 
 const DEFAULT_MAX_HEIGHT = 940; // ~A4 altura 1121px - paddings/rodapé
@@ -13,6 +15,8 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
   blocks,
   pageContentMaxHeight = DEFAULT_MAX_HEIGHT,
   renderPage,
+  justifyText = true,
+  language = "pt-BR",
 }) => {
   const measureRef = React.useRef<HTMLDivElement | null>(null);
   const [pages, setPages] = React.useState<React.ReactNode[][]>([]);
@@ -67,11 +71,12 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
       {/* Contêiner de medição oculto com a mesma largura/tipografia do conteúdo real */}
       <div
         ref={measureRef}
-        className="absolute opacity-0 pointer-events-none -z-50 presentation-content"
+        className={`absolute opacity-0 pointer-events-none -z-50 presentation-content ${justifyText ? "justify-text" : ""}`}
         style={{
           visibility: "hidden",
           width: PAGE_CONTENT_WIDTH_CALC, // largura da caixa de texto efetiva
         }}
+        lang={language}
       >
         {blocks.map((block, i) => (
           <div key={i} className="m-0 p-0">

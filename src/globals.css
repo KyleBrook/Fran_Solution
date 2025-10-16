@@ -106,4 +106,15 @@
   .presentation-content blockquote {
     @apply border-l-8 border-gray-300 pl-6 italic my-5;
   }
+
+  /* Justificação opcional apenas para parágrafos, com hifenização */
+  .presentation-content.justify-text {
+    hyphens: auto;
+  }
+  .presentation-content.justify-text p {
+    text-align: justify;
+    text-justify: inter-word;
+    text-align-last: left;
+    hyphens: auto;
+  }
 }

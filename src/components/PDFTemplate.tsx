@@ -79,6 +79,8 @@ export interface ContentProps {
   className?: string;
   backgroundImage?: string;
   topRightLogo?: string;
+  justifyText?: boolean;
+  language?: string;
 }
 
 export const ContentPage: React.FC<ContentProps> = ({
@@ -86,6 +88,8 @@ export const ContentPage: React.FC<ContentProps> = ({
   className,
   backgroundImage,
   topRightLogo,
+  justifyText = true,
+  language = "pt-BR",
 }) => {
   return (
     <div
@@ -115,8 +119,12 @@ export const ContentPage: React.FC<ContentProps> = ({
       {/* Caixa de texto com INSET adicional para margens internas maiores */}
       <div className="relative z-10">
         <div
-          className="presentation-content"
+          className={classNames(
+            "presentation-content",
+            justifyText && "justify-text"
+          )}
           style={{ padding: CONTENT_INSET_PX }}
+          lang={language}
         >
           {children}
         </div>

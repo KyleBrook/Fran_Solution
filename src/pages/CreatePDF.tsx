@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
 import PDFGenerator, { PDFData } from "@/components/PDFGenerator"
 import {
   showError,
@@ -47,6 +48,7 @@ export default function CreatePDF() {
   const [titleSize, setTitleSize] = React.useState(64)
   const [subtitleSize, setSubtitleSize] = React.useState(28)
   const [bodySize, setBodySize] = React.useState(20)
+  const [justifyText, setJustifyText] = React.useState(true)
   const [loadingAI, setLoadingAI] = React.useState(false)
   const [generated, setGenerated] = React.useState<PDFData | null>(null)
 
@@ -99,6 +101,8 @@ export default function CreatePDF() {
       contentBackground: DEFAULTS.contentBackground,
       pageTopRightLogo: DEFAULTS.pageTopRightLogo,
       blocks: fromBlocks,
+      justifyText,
+      language: "pt-BR",
     } as PDFData
   }
 
@@ -268,6 +272,12 @@ export default function CreatePDF() {
                 </Select>
               </div>
             </div>
+
+            <div className="flex items-center justify-between py-2">
+              <Label htmlFor="justifyText" className="mr-4">Justificar texto</Label>
+              <Switch id="justifyText" checked={justifyText} onCheckedChange={setJustifyText} />
+            </div>
+
             <div>
               <Label htmlFor="body">Conteúdo</Label>
               <Textarea

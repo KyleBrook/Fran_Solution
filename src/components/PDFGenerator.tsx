@@ -8,10 +8,20 @@ export interface PDFData {
   blocks?: React.ReactNode[];
   contentBackground?: string;
   pageTopRightLogo?: string;
+  justifyText?: boolean;
+  language?: string;
 }
 
 const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
-  const { cover, pages, blocks, contentBackground, pageTopRightLogo } = data;
+  const {
+    cover,
+    pages,
+    blocks,
+    contentBackground,
+    pageTopRightLogo,
+    justifyText = true,
+    language = "pt-BR",
+  } = data;
 
   return (
     <>
@@ -19,11 +29,15 @@ const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
       {Array.isArray(blocks) && blocks.length > 0 ? (
         <AutoPaginator
           blocks={blocks}
+          justifyText={justifyText}
+          language={language}
           renderPage={(children, index) => (
             <ContentPage
               key={index}
               backgroundImage={contentBackground}
               topRightLogo={pageTopRightLogo}
+              justifyText={justifyText}
+              language={language}
             >
               {children}
             </ContentPage>
@@ -35,6 +49,8 @@ const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
             key={index}
             backgroundImage={contentBackground}
             topRightLogo={pageTopRightLogo}
+            justifyText={justifyText}
+            language={language}
           >
             {content}
           </ContentPage>
