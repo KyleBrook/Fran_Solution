@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "OPTIONS, POST",
 };
 
 type RequestBody = {
@@ -21,15 +22,11 @@ function createFallbackContent({
 }: RequestBody) {
   const normTitle = (title || "Documento").toString().trim();
   const normSubtitle = (subtitle || "").toString().trim();
-
-  // Divide o texto em parágrafos considerando linhas em branco
   const paragraphs =
     (body || "")
       .split(/\n\s*\n/g)
       .map((p) => p.trim())
       .filter(Boolean);
-
-  // Se não houver corpo, cria alguns parágrafos curtos de exemplo
   const defaultParas =
     language.startsWith("pt")
       ? [
@@ -42,7 +39,6 @@ function createFallbackContent({
           "Add your text and we'll automatically split it into clear paragraphs.",
           "You can print the PDF or adjust title, subtitle and body sizes as you like.",
         ];
-
   return {
     title: normTitle,
     subtitle: normSubtitle,
@@ -68,7 +64,6 @@ serve(async (req) => {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   const hasKey = !!apiKey && apiKey.length > 0;
 
-  // Se não houver chave, retorna conteúdo local organizado (fallback)
   if (!hasKey) {
     const fallback = createFallbackContent({ title, subtitle, body, language });
     return new Response(JSON.stringify(fallback), {
@@ -121,7 +116,6 @@ Regras:
       }),
     });
 
-    // Se a OpenAI falhar, usa fallback local
     if (!response.ok) {
       const fallback = createFallbackContent({ title, subtitle, body, language });
       return new Response(JSON.stringify(fallback), {
@@ -145,7 +139,6 @@ Regras:
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (_err) {
-    // Qualquer erro inesperado: retorna fallback local
     const fallback = createFallbackContent({ title, subtitle, body, language });
     return new Response(JSON.stringify(fallback), {
       status: 200,
