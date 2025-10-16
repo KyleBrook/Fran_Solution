@@ -1,6 +1,5 @@
 import React from "react";
 import PDFGenerator, { PDFData } from "@/components/PDFGenerator";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ExportPDFButton from "@/components/ExportPDFButton";
@@ -144,7 +143,6 @@ const Index = () => {
           <ExportPDFButton filename="aula-06.pdf" />
         </div>
         <PDFGenerator data={sampleData} />
-        <MadeWithDyad />
       </div>
     </div>
   );
