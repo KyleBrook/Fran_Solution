@@ -1,4 +1,5 @@
 import React from "react";
+import { PAGE_PADDING_PX } from "@/constants/layout";
 
 export interface CoverProps {
   background: string;
@@ -32,6 +33,7 @@ export const CoverPage: React.FC<CoverProps> = ({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundColor: "#ffffff",
+        padding: PAGE_PADDING_PX,
       }}
     >
       <div className="absolute inset-0 bg-white/35 pointer-events-none" />
@@ -39,7 +41,8 @@ export const CoverPage: React.FC<CoverProps> = ({
         <img
           src={logo || "/favicon.ico"}
           alt="Logo"
-          className="absolute top-6 right-6 w-28 h-auto object-contain"
+          className="absolute w-28 h-auto object-contain"
+          style={{ top: PAGE_PADDING_PX, right: PAGE_PADDING_PX }}
           onError={() => setShowLogo(false)}
         />
       )}
@@ -50,7 +53,10 @@ export const CoverPage: React.FC<CoverProps> = ({
         <h2 className="mt-4 text-4xl font-semibold text-gray-800">{topic}</h2>
       </div>
       {(signatureTitle || signatureSubtitle) && (
-        <div className="absolute bottom-8 right-8 text-right">
+        <div
+          className="absolute text-right"
+          style={{ bottom: PAGE_PADDING_PX, right: PAGE_PADDING_PX }}
+        >
           {signatureTitle && (
             <div className="text-2xl md:text-3xl font-bold tracking-wide text-gray-800">
               {signatureTitle}
@@ -83,7 +89,7 @@ export const ContentPage: React.FC<ContentProps> = ({
   return (
     <div
       className={classNames(
-        "page w-[210mm] h-[297mm] mx-auto p-8 bg-white shadow-md print:shadow-none relative overflow-hidden",
+        "page w-[210mm] h-[297mm] mx-auto bg-white shadow-md print:shadow-none relative overflow-hidden",
         className
       )}
       style={{
@@ -92,13 +98,15 @@ export const ContentPage: React.FC<ContentProps> = ({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundColor: "#ffffff",
+        padding: PAGE_PADDING_PX,
       }}
     >
       {topRightLogo && (
         <img
           src={topRightLogo}
           alt="Logo da página"
-          className="absolute top-6 right-6 w-24 h-auto object-contain"
+          className="absolute w-24 h-auto object-contain"
+          style={{ top: PAGE_PADDING_PX, right: PAGE_PADDING_PX }}
         />
       )}
       <div className="relative z-10 presentation-content">

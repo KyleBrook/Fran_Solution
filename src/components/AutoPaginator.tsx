@@ -1,4 +1,5 @@
 import React from "react";
+import { PAGE_CONTENT_WIDTH_CALC } from "@/constants/layout";
 
 type AutoPaginatorProps = {
   blocks: React.ReactNode[];
@@ -66,7 +67,7 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
         className="absolute opacity-0 pointer-events-none -z-50 presentation-content"
         style={{
           visibility: "hidden",
-          width: "calc(210mm - 64px)", // 210mm menos padding lateral (p-8 = 32px x 2)
+          width: PAGE_CONTENT_WIDTH_CALC, // 210mm menos padding lateral atualizado
         }}
       >
         {blocks.map((block, i) => (
