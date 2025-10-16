@@ -52,12 +52,14 @@ export const CoverPage: React.FC<CoverProps> = ({
       {(signatureTitle || signatureSubtitle) && (
         <div className="absolute bottom-8 right-8 text-right">
           {signatureTitle && (
-            <div className="text-sm tracking-wide text-gray-700">
+            <div className="text-2xl md:text-3xl font-bold tracking-wide text-gray-800">
               {signatureTitle}
             </div>
           )}
           {signatureSubtitle && (
-            <div className="text-xs text-gray-600">{signatureSubtitle}</div>
+            <div className="text-base md:text-lg text-gray-700 mt-1">
+              {signatureSubtitle}
+            </div>
           )}
         </div>
       )}

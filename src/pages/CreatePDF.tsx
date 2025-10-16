@@ -27,12 +27,17 @@ const DEFAULTS = {
     "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/fundo%20imagens%20luma.png",
   pageTopRightLogo:
     "https://nolrnrwzeurbimcnוואך.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG"
-      .replace("wartz.supabase.co", "wzeurbimcnjlwm.supabase.co"), // ensure correct domain
+      .replace("wartz.supabase.co", "wzeurbimcnjlwm.supabase.co"),
 };
 
 const CreatePDF: React.FC = () => {
   const [title, setTitle] = React.useState<string>("Meu Título");
   const [subtitle, setSubtitle] = React.useState<string>("Meu Subtítulo opcional");
+
+  // Novos campos de assinatura (canto inferior direito da capa)
+  const [signatureHeadline, setSignatureHeadline] = React.useState<string>("");
+  const [signatureSubline, setSignatureSubline] = React.useState<string>("");
+
   const [body, setBody] = React.useState<string>(
     [
       "Cole aqui o texto geral do PDF.",
@@ -96,6 +101,8 @@ const CreatePDF: React.FC = () => {
         logo: DEFAULTS.logo,
         lessonNumber: title || " ",
         topic: subtitle || " ",
+        signatureTitle: signatureHeadline || undefined,
+        signatureSubtitle: signatureSubline || undefined,
       },
       contentBackground: DEFAULTS.contentBackground,
       pageTopRightLogo: DEFAULTS.pageTopRightLogo,
@@ -119,7 +126,6 @@ const CreatePDF: React.FC = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Chave pública (anon) do Supabase — segura para o cliente
             Authorization:
               "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vbHJucnd6ZXVyYmltY25qbHdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwODg3NjYsImV4cCI6MjA2NzY2NDc2Nn0.wwkTP3ca1a5emAiEZyZGxnujlOW7tAuJrExwRwzQ6XA",
           },
@@ -182,6 +188,8 @@ const CreatePDF: React.FC = () => {
           logo: DEFAULTS.logo,
           lessonNumber: aiTitle || " ",
           topic: aiSubtitle || " ",
+          signatureTitle: signatureHeadline || undefined,
+          signatureSubtitle: signatureSubline || undefined,
         },
         contentBackground: DEFAULTS.contentBackground,
         pageTopRightLogo: DEFAULTS.pageTopRightLogo,
@@ -211,7 +219,7 @@ const CreatePDF: React.FC = () => {
               {/* Título */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="title">Título</Label>
+                  <Label htmlFor="title">Título (capa)</Label>
                   <div className="flex items-center gap-2">
                     <Label className="text-xs text-muted-foreground">Tamanho</Label>
                     <Select
@@ -242,7 +250,7 @@ const CreatePDF: React.FC = () => {
               {/* Subtítulo */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="subtitle">Subtítulo</Label>
+                  <Label htmlFor="subtitle">Subtítulo (capa)</Label>
                   <div className="flex items-center gap-2">
                     <Label className="text-xs text-muted-foreground">Tamanho</Label>
                     <Select
@@ -268,6 +276,26 @@ const CreatePDF: React.FC = () => {
                   onChange={(e) => setSubtitle(e.target.value)}
                   placeholder="Digite o subtítulo (opcional)"
                 />
+              </div>
+
+              {/* Assinatura da capa */}
+              <div className="space-y-2">
+                <Label>Assinatura (capa)</Label>
+                <Input
+                  id="signatureHeadline"
+                  value={signatureHeadline}
+                  onChange={(e) => setSignatureHeadline(e.target.value)}
+                  placeholder="Headline da assinatura (ex.: GÊNESIS, O INÍCIO DE TUDO.)"
+                />
+                <Input
+                  id="signatureSubline"
+                  value={signatureSubline}
+                  onChange={(e) => setSignatureSubline(e.target.value)}
+                  placeholder="Assinatura da headline (ex.: COM LUMA ELPÍDIO)"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Exibida no canto inferior direito da capa. A headline aparece maior.
+                </p>
               </div>
 
               {/* Texto Geral */}
