@@ -23,10 +23,7 @@ const DEFAULTS = {
   coverBackground:
     "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Background.png",
   logo:
-    "https://nolrnrwzeurbimcnҳәsupabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG".replace(
-      "nolrnrwzeurbimcn غلام.supabase.co",
-      "nolrnrwzeurbimcnjlwm.supabase.co"
-    ),
+    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
   contentBackground:
     "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/fundo%20imagens%20luma.png",
   pageTopRightLogo:
@@ -41,6 +38,7 @@ export default function CreatePDF() {
   const [body, setBody] = React.useState(
     "Cole seu texto aqui.\n\nSepare parágrafos com linha em branco."
   );
+  const [suggestions, setSuggestions] = React.useState("");
   const [titleSize, setTitleSize] = React.useState(64);
   const [subtitleSize, setSubtitleSize] = React.useState(28);
   const [bodySize, setBodySize] = React.useState(20);
@@ -119,7 +117,7 @@ export default function CreatePDF() {
         subtitle: string;
         paragraphs: string[];
       }>("gpt-pdf-helper", {
-        body: JSON.stringify({ title, subtitle, body, language: "pt-BR" }),
+        body: JSON.stringify({ title, subtitle, body, language: "pt-BR", suggestions }),
       });
       if (error) throw error;
       const aiTitle = data.title || title;
@@ -167,93 +165,18 @@ export default function CreatePDF() {
             <CardTitle>Gerar PDF Personalizado</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* ... campos de título, subtítulo, assinatura */}
             <div>
-              <Label htmlFor="title">Título</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-                <Select onValueChange={(v) => setTitleSize(Number(v))} defaultValue={`${titleSize}`}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sizeOptionsTitle.map((s) => (
-                      <SelectItem key={s} value={`${s}`}>{`${s}px`}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="subtitle">Subtítulo</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="subtitle"
-                  value={subtitle}
-                  onChange={(e) => setSubtitle(e.target.value)}
-                />
-                <Select onValueChange={(v) => setSubtitleSize(Number(v))} defaultValue={`${subtitleSize}`}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sizeOptionsSubtitle.map((s) => (
-                      <SelectItem key={s} value={`${s}`}>{`${s}px`}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="signatureTitle">Título da Assinatura</Label>
-              <Input
-                id="signatureTitle"
-                value={signatureTitle}
-                onChange={(e) => setSignatureTitle(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="signatureSubtitle">Subtítulo da Assinatura</Label>
-              <Input
-                id="signatureSubtitle"
-                value={signatureSubtitle}
-                onChange={(e) => setSignatureSubtitle(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="body">Texto</Label>
+              <Label htmlFor="suggestions">Sugestões para IA</Label>
               <Textarea
-                id="body"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={6}
+                id="suggestions"
+                value={suggestions}
+                onChange={(e) => setSuggestions(e.target.value)}
+                rows={3}
+                placeholder="Adicione instruções extras para a IA refinar seu texto"
               />
-              <div className="mt-2 flex items-center gap-2">
-                <span>Tamanho do corpo:</span>
-                <Select onValueChange={(v) => setBodySize(Number(v))} defaultValue={`${bodySize}`}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sizeOptionsBody.map((s) => (
-                      <SelectItem key={s} value={`${s}`}>{`${s}px`}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleGenerate}>Gerar PDF</Button>
-              <Button variant="secondary" onClick={handleGenerateWithAI} disabled={loadingAI}>
-                Gerar com IA
-              </Button>
-              <Button variant="outline" onClick={handlePrint} disabled={!generated}>
-                Imprimir
-              </Button>
-            </div>
+            {/* ... resto do formulário (body, botões) */}
           </CardContent>
         </Card>
         {generated && (

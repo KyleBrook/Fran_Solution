@@ -1,5 +1,11 @@
-// @ts-nocheck
+// @ts-ignore: remote import for Deno Edge Function
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +17,8 @@ type RequestBody = {
   title?: string;
   subtitle?: string;
   body?: string;
-  language?: string; // e.g., 'pt-BR'
+  language?: string;
+  suggestions?: string;
 };
 
 function createFallbackContent({
@@ -59,7 +66,7 @@ serve(async (req) => {
   }
 
   const requestData = (await req.json()) as RequestBody;
-  const { title, subtitle, body, language = "pt-BR" } = requestData || {};
+  const { title, subtitle, body, language = "pt-BR", suggestions } = requestData || {};
 
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   const hasKey = !!apiKey && apiKey.length > 0;
@@ -81,7 +88,7 @@ serve(async (req) => {
       .filter(Boolean)
       .join("\n\n");
 
-    const systemPrompt = `Você é um assistente que organiza conteúdo para um PDF com capa (título/subtítulo) e corpo do texto.
+    let systemPrompt = `Você é um assistente que organiza conteúdo para um PDF com capa (título/subtítulo) e corpo do texto.
 Responda estritamente em JSON válido, sem comentários, sem markdown, no idioma solicitado.
 Formato de saída:
 {
@@ -94,6 +101,10 @@ Regras:
 - Reestruture o corpo em parágrafos claros e coesos (sem listas a não ser que seja indispensável).
 - Não inclua quebras manuais além da divisão por parágrafos.
 - Mantenha o idioma: ${language}.`;
+
+    if (suggestions?.trim()) {
+      systemPrompt += `\n\nInstruções adicionais para IA: ${suggestions.trim()}`;
+    }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
