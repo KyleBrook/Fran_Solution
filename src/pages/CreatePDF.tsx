@@ -20,6 +20,7 @@ import {
   dismissToast,
 } from "@/utils/toast"
 import { supabase } from "@/integrations/supabase/client"
+import ExportPDFButton from "@/components/ExportPDFButton"
 
 const sizeOptionsTitle = [40, 48, 56, 64, 72, 80]
 const sizeOptionsSubtitle = [20, 22, 24, 28, 32, 36]
@@ -166,6 +167,11 @@ export default function CreatePDF() {
     }
   }
 
+  const exportFilename = React.useMemo(() => {
+    const base = [title, subtitle].filter(Boolean).join(" - ") || "documento"
+    return `${base}.pdf`.replace(/\s+/g, "_").toLowerCase()
+  }, [title, subtitle])
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto">
@@ -287,7 +293,7 @@ export default function CreatePDF() {
                 rows={6}
               />
             </div>
-            <div className="flex justify-end space-x-2 pt-2">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
               <Button onClick={handleGenerate}>Gerar PDF</Button>
               <Button onClick={handleGenerateWithAI} disabled={loadingAI}>
                 {loadingAI ? "Gerando IA…" : "Gerar com IA"}
@@ -295,6 +301,7 @@ export default function CreatePDF() {
               <Button variant="outline" onClick={handlePrint}>
                 Imprimir
               </Button>
+              <ExportPDFButton filename={exportFilename} disabled={!generated} />
             </div>
           </CardContent>
         </Card>

@@ -3,6 +3,7 @@ import PDFGenerator, { PDFData } from "@/components/PDFGenerator";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ExportPDFButton from "@/components/ExportPDFButton";
 
 const blocks: React.ReactNode[] = [
   <h1 key="t1">Aula 6 - Origem das Nações</h1>,
@@ -140,6 +141,7 @@ const Index = () => {
           <Button asChild>
             <Link to="/criar-pdf">Criar PDF personalizado</Link>
           </Button>
+          <ExportPDFButton filename="aula-06.pdf" />
         </div>
         <PDFGenerator data={sampleData} />
         <MadeWithDyad />
