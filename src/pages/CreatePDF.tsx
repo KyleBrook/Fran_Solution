@@ -22,6 +22,8 @@ import {
 import { supabase } from "@/integrations/supabase/client"
 import ExportPDFButton from "@/components/ExportPDFButton"
 import ImageBlock from "@/components/ImageBlock"
+import { uploadImageToSupabase } from "@/integrations/supabase/storage"
+import { UploadCloud } from "lucide-react"
 
 type ImageItem = {
   src: string
@@ -68,6 +70,7 @@ export default function CreatePDF() {
   const [imgCaption, setImgCaption] = React.useState("")
   const [imgWidth, setImgWidth] = React.useState(80)
   const [imgAfterPara, setImgAfterPara] = React.useState(0)
+  const [uploading, setUploading] = React.useState(false)
 
   const paragraphs = React.useMemo(() => {
     return body
@@ -202,9 +205,9 @@ export default function CreatePDF() {
         body: JSON.stringify({ title, subtitle, body, language: "pt-BR", suggestions }),
       })
       if (error) throw error
-      const aiTitle = data.title || title
-      const aiSubtitle = data.subtitle || subtitle
-      const paras = Array.isArray(data.paragraphs) ? data.paragraphs : []
+      const aiTitle = (data as any)?.title || title
+      const aiSubtitle = (data as any)?.subtitle || subtitle
+      const paras = Array.isArray((data as any)?.paragraphs) ? (data as any)?.paragraphs : []
       setTitle(aiTitle)
       setSubtitle(aiSubtitle)
       setBody(paras.join("\n\n"))
@@ -255,6 +258,31 @@ export default function CreatePDF() {
   const handleRemoveImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index))
     showSuccess("Imagem removida.")
+  }
+
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const toastId = showLoading("Enviando imagem para o Supabase...")
+    try {
+      const publicUrl = await uploadImageToSupabase(file, {
+        // Ajuste o bucket/pasta aqui se desejar:
+        bucket: "Luma__Fran",
+        folder: "uploads",
+      })
+      setImgUrl(publicUrl)
+      showSuccess("Imagem enviada! URL preenchida automaticamente.")
+    } catch (err) {
+      console.error(err)
+      showError("Falha ao enviar imagem. Verifique o bucket e as permissões.")
+    } finally {
+      dismissToast(toastId)
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
   }
 
   return (
@@ -386,12 +414,32 @@ export default function CreatePDF() {
             {/* Seção de Imagens */}
             <div className="rounded-lg border p-4 bg-white">
               <h3 className="font-semibold mb-3">Imagens no conteúdo</h3>
+
+              {/* Upload direto para Supabase */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-4">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelected}
+                  disabled={uploading}
+                  className="sm:max-w-xs"
+                />
+                <Button type="button" variant="outline" disabled className="hidden sm:inline-flex">
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  {uploading ? "Enviando..." : "Selecionar arquivo"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Selecione uma imagem; o sistema envia ao Supabase e preenche a URL automaticamente.
+                </p>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Label htmlFor="imgUrl">URL da imagem</Label>
                   <Input
                     id="imgUrl"
-                    placeholder="https://exemplo.com/imagem.png"
+                    placeholder="https://... (preenchido automaticamente após upload)"
                     value={imgUrl}
                     onChange={(e) => setImgUrl(e.target.value)}
                   />
@@ -442,8 +490,8 @@ export default function CreatePDF() {
                 </div>
               </div>
               <div className="flex justify-end mt-3">
-                <Button variant="secondary" onClick={handleAddImage}>
-                  Adicionar imagem
+                <Button variant="secondary" onClick={handleAddImage} disabled={!imgUrl}>
+                  Adicionar imagem ao conteúdo
                 </Button>
               </div>
 
