@@ -29,8 +29,8 @@ import Seo from "@/components/Seo"
 type ImageItem = {
   src: string
   caption?: string
-  width: number
-  afterParagraph: number
+  width: number // percent
+  afterParagraph: number // 0..N (0 = antes do 1º parágrafo, N = após o último)
 }
 
 const sizeOptionsTitle = [40, 48, 56, 64, 72, 80]
@@ -69,6 +69,7 @@ export default function CreatePDF() {
   const [loadingAI, setLoadingAI] = React.useState(false)
   const [generated, setGenerated] = React.useState<PDFData | null>(null)
 
+  // Imagens
   const [images, setImages] = React.useState<ImageItem[]>([])
   const [imgUrl, setImgUrl] = React.useState("")
   const [imgCaption, setImgCaption] = React.useState("")
@@ -76,6 +77,7 @@ export default function CreatePDF() {
   const [imgAfterPara, setImgAfterPara] = React.useState(0)
   const [uploading, setUploading] = React.useState(false)
 
+  // Conta apenas parágrafos (linhas que não são cabeçalhos ##/###)
   const paragraphs = React.useMemo(() => {
     return body
       .split(/\n\s*\n/)
@@ -97,6 +99,7 @@ export default function CreatePDF() {
     if (t.trim()) items.push(<h1 key="title" style={{ fontSize: sizes.t }}>{t}</h1>)
     if (s.trim()) items.push(<h2 key="subtitle" style={{ fontSize: sizes.s }}>{s}</h2>)
 
+    // imagens com afterParagraph === 0 (antes do primeiro parágrafo)
     imgs
       .filter((im) => im.afterParagraph === 0)
       .forEach((im, idx) => {
@@ -111,6 +114,7 @@ export default function CreatePDF() {
         )
       })
 
+    // Se tivermos o corpo bruto, fazemos parsing com ## (h2) e ### (h3).
     if (rawBody) {
       const segments = rawBody
         .split(/\n\s*\n/)
@@ -139,6 +143,7 @@ export default function CreatePDF() {
           return
         }
 
+        // Parágrafo
         items.push(
           <p key={"p-" + idx} style={{ fontSize: sizes.b }}>
             {seg}
@@ -146,6 +151,7 @@ export default function CreatePDF() {
         )
         paraIndex += 1
 
+        // Inserir imagens após este parágrafo
         imgs
           .filter((im) => im.afterParagraph === paraIndex)
           .forEach((im, i2) => {
@@ -171,6 +177,7 @@ export default function CreatePDF() {
       return items
     }
 
+    // Fallback antigo: só parágrafos
     paras.forEach((p, i) => {
       items.push(
         <p key={"p-" + i} style={{ fontSize: sizes.b }}>
@@ -338,9 +345,10 @@ export default function CreatePDF() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <Seo
-        title="Criar PDF personalizado | Gerador A4"
-        description="Edite título, subtítulo e conteúdo com subtítulos automáticos (##, ###), adicione imagens e exporte para PDF em A4."
-        image={DEFAULTS.logo}
+        title="EbookFy.Pro"
+        description="Ebook em Segundos."
+        image="https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/logo-1.jpg"
+        url="https://ebookfy.pro"
       />
       <div className="container mx-auto">
         <Card className="max-w-2xl mx-auto">

@@ -137,9 +137,10 @@ const Index = () => {
   return (
     <div className="min-h-screen w-full bg-white py-8">
       <Seo
-        title="Exemplo de eBook em PDF | Gerador A4"
-        description="Veja um exemplo de eBook A4 com capa, paginação automática e exportação para PDF."
-        image="https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG"
+        title="EbookFy.Pro"
+        description="Ebook em Segundos."
+        image="https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/logo-1.jpg"
+        url="https://ebookfy.pro"
       />
       <div className="flex flex-col items-center gap-6">
         <div className="flex items-center gap-3">
