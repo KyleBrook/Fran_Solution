@@ -1,6 +1,3 @@
-` with the code content from the earlier correct version. First, I’ll check that the code length is manageable and verify if the import path for Seo, "@/components/Seo", exists. I must ensure we have the default export for the function CreatePDF. After that, I'll include a "Refresh" command to reload the preview. According to the guidelines, I should inform the user to look for the action button above the chat input when outputting these commands. Let's get started!</think>Esses erros vieram de um texto acidental no topo de src/pages/CreatePDF.tsx que quebrou o parser do TypeScript. Substituí o arquivo por uma versão válida, mantendo a detecção de subtítulos “##/###”, controles de tamanho e Seo.
-
-<dyad-write path="src/pages/CreatePDF.tsx" description="Reescreve o arquivo removendo o texto inválido e garantindo TSX válido com detecção de subtítulos ##/###, controles de tamanho e Seo.">
 import React from "react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -32,8 +29,8 @@ import Seo from "@/components/Seo"
 type ImageItem = {
   src: string
   caption?: string
-  width: number // percent
-  afterParagraph: number // 0..N (0 = antes do 1º parágrafo, N = após o último)
+  width: number
+  afterParagraph: number
 }
 
 const sizeOptionsTitle = [40, 48, 56, 64, 72, 80]
@@ -72,7 +69,6 @@ export default function CreatePDF() {
   const [loadingAI, setLoadingAI] = React.useState(false)
   const [generated, setGenerated] = React.useState<PDFData | null>(null)
 
-  // Imagens
   const [images, setImages] = React.useState<ImageItem[]>([])
   const [imgUrl, setImgUrl] = React.useState("")
   const [imgCaption, setImgCaption] = React.useState("")
@@ -80,7 +76,6 @@ export default function CreatePDF() {
   const [imgAfterPara, setImgAfterPara] = React.useState(0)
   const [uploading, setUploading] = React.useState(false)
 
-  // Conta apenas parágrafos (linhas que não são cabeçalhos ##/###)
   const paragraphs = React.useMemo(() => {
     return body
       .split(/\n\s*\n/)
@@ -99,16 +94,15 @@ export default function CreatePDF() {
   ) {
     const items: React.ReactNode[] = []
 
-    if (t.trim()) items.push(<h1 key="title" style={{ fontSize: `${sizes.t}px` }}>{t}</h1>)
-    if (s.trim()) items.push(<h2 key="subtitle" style={{ fontSize: `${sizes.s}px` }}>{s}</h2>)
+    if (t.trim()) items.push(<h1 key="title" style={{ fontSize: sizes.t }}>{t}</h1>)
+    if (s.trim()) items.push(<h2 key="subtitle" style={{ fontSize: sizes.s }}>{s}</h2>)
 
-    // imagens com afterParagraph === 0 (antes do primeiro parágrafo)
     imgs
       .filter((im) => im.afterParagraph === 0)
       .forEach((im, idx) => {
         items.push(
           <ImageBlock
-            key={`img-0-${idx}-${im.src}`}
+            key={"img-0-" + idx + "-" + im.src}
             src={im.src}
             caption={im.caption}
             widthPercent={im.width}
@@ -117,7 +111,6 @@ export default function CreatePDF() {
         )
       })
 
-    // Parsing com ## (h2) e ### (h3).
     if (rawBody) {
       const segments = rawBody
         .split(/\n\s*\n/)
@@ -131,7 +124,7 @@ export default function CreatePDF() {
 
         if (h3Match) {
           items.push(
-            <h3 key={`h3-${idx}`} style={{ fontSize: `${sizes.h3}px` }}>
+            <h3 key={"h3-" + idx} style={{ fontSize: sizes.h3 }}>
               {h3Match[1]}
             </h3>
           )
@@ -139,28 +132,26 @@ export default function CreatePDF() {
         }
         if (h2Match) {
           items.push(
-            <h2 key={`h2-${idx}`} style={{ fontSize: `${sizes.h2}px` }}>
+            <h2 key={"h2-" + idx} style={{ fontSize: sizes.h2 }}>
               {h2Match[1]}
             </h2>
           )
           return
         }
 
-        // Parágrafo
         items.push(
-          <p key={`p-${idx}`} style={{ fontSize: `${sizes.b}px` }}>
+          <p key={"p-" + idx} style={{ fontSize: sizes.b }}>
             {seg}
           </p>
         )
         paraIndex += 1
 
-        // Inserir imagens após este parágrafo
         imgs
           .filter((im) => im.afterParagraph === paraIndex)
           .forEach((im, i2) => {
             items.push(
               <ImageBlock
-                key={`img-${paraIndex}-${i2}-${im.src}`}
+                key={"img-" + paraIndex + "-" + i2 + "-" + im.src}
                 src={im.src}
                 caption={im.caption}
                 widthPercent={im.width}
@@ -170,10 +161,9 @@ export default function CreatePDF() {
           })
       })
 
-      // Caso não haja nada
       if (segments.length === 0 && imgs.length === 0) {
         items.push(
-          <p key="empty" style={{ fontSize: `${sizes.b}px` }}>
+          <p key="empty" style={{ fontSize: sizes.b }}>
             Adicione seu texto.
           </p>
         )
@@ -181,10 +171,9 @@ export default function CreatePDF() {
       return items
     }
 
-    // Fallback antigo: só parágrafos
     paras.forEach((p, i) => {
       items.push(
-        <p key={`p-${i}`} style={{ fontSize: `${sizes.b}px` }}>
+        <p key={"p-" + i} style={{ fontSize: sizes.b }}>
           {p}
         </p>
       )
@@ -194,7 +183,7 @@ export default function CreatePDF() {
         .forEach((im, idx) => {
           items.push(
             <ImageBlock
-              key={`img-${i + 1}-${idx}-${im.src}`}
+              key={"img-" + (i + 1) + "-" + idx + "-" + im.src}
               src={im.src}
               caption={im.caption}
               widthPercent={im.width}
@@ -206,7 +195,7 @@ export default function CreatePDF() {
 
     if (paras.length === 0 && imgs.length === 0) {
       items.push(
-        <p key="empty" style={{ fontSize: `${sizes.b}px` }}>
+        <p key="empty" style={{ fontSize: sizes.b }}>
           Adicione seu texto.
         </p>
       )
@@ -294,7 +283,7 @@ export default function CreatePDF() {
 
   const exportFilename = React.useMemo(() => {
     const base = [title, subtitle].filter(Boolean).join(" - ") || "documento"
-    return `${base}.pdf`.replace(/\s+/g, "_").toLowerCase()
+    return base.replace(/\s+/g, "_").toLowerCase() + ".pdf"
   }, [title, subtitle])
 
   const handleAddImage = () => {
@@ -410,7 +399,7 @@ export default function CreatePDF() {
                   onValueChange={(v) => setTitleSize(Number(v))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={`${titleSize}px`} />
+                    <SelectValue placeholder={String(titleSize) + "px"} />
                   </SelectTrigger>
                   <SelectContent>
                     {sizeOptionsTitle.map((s) => (
@@ -428,7 +417,7 @@ export default function CreatePDF() {
                   onValueChange={(v) => setSubtitleSize(Number(v))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={`${subtitleSize}px`} />
+                    <SelectValue placeholder={String(subtitleSize) + "px"} />
                   </SelectTrigger>
                   <SelectContent>
                     {sizeOptionsSubtitle.map((s) => (
@@ -446,7 +435,7 @@ export default function CreatePDF() {
                   onValueChange={(v) => setH2Size(Number(v))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={`${h2Size}px`} />
+                    <SelectValue placeholder={String(h2Size) + "px"} />
                   </SelectTrigger>
                   <SelectContent>
                     {sizeOptionsH2.map((s) => (
@@ -464,7 +453,7 @@ export default function CreatePDF() {
                   onValueChange={(v) => setH3Size(Number(v))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={`${h3Size}px`} />
+                    <SelectValue placeholder={String(h3Size) + "px"} />
                   </SelectTrigger>
                   <SelectContent>
                     {sizeOptionsH3.map((s) => (
@@ -495,11 +484,9 @@ export default function CreatePDF() {
               </p>
             </div>
 
-            {/* Seção de Imagens */}
             <div className="rounded-lg border p-4 bg-white">
               <h3 className="font-semibold mb-3">Imagens no conteúdo</h3>
 
-              {/* Upload direto para Supabase */}
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-4">
                 <Input
                   ref={fileInputRef}
@@ -535,7 +522,7 @@ export default function CreatePDF() {
                     onValueChange={(v) => setImgWidth(Number(v))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={`${imgWidth}%`} />
+                      <SelectValue placeholder={String(imgWidth) + "%"} />
                     </SelectTrigger>
                     <SelectContent>
                       {widthOptions.map((w) => (
@@ -584,12 +571,13 @@ export default function CreatePDF() {
                   <h4 className="text-sm font-medium mb-2">Imagens adicionadas</h4>
                   <ul className="space-y-2">
                     {images.map((im, idx) => (
-                      <li key={`${im.src}-${idx}`} className="flex items-center justify-between rounded-md border p-2">
+                      <li key={im.src + "-" + idx} className="flex items-center justify-between rounded-md border p-2">
                         <div className="text-sm">
                           <div className="font-medium break-all">{im.src}</div>
                           <div className="text-muted-foreground">
-                            {im.width}% • Após parágrafo {im.afterParagraph || 0}{im.afterParagraph === 0 ? " (início)" : ""}
-                            {im.caption ? ` • "${im.caption}"` : ""}
+                            {im.width}% • Após parágrafo {im.afterParagraph || 0}
+                            {im.afterParagraph === 0 ? " (início)" : ""}
+                            {im.caption ? " • \"" + im.caption + "\"" : ""}
                           </div>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => handleRemoveImage(idx)}>
