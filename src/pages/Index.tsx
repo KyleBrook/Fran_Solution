@@ -137,7 +137,7 @@ const Index = () => {
   return (
     <div className="min-h-screen w-full bg-white py-8">
       <Seo
-        title="EbookFy.Pro"
+        title="EbookFy - Ebook em Segundos"
         description="Ebook em Segundos."
         image="https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/logo-1.jpg"
         url="https://ebookfy.pro"
