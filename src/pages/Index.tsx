@@ -3,6 +3,7 @@ import PDFGenerator, { PDFData } from "@/components/PDFGenerator";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ExportPDFButton from "@/components/ExportPDFButton";
+import Seo from "@/components/Seo";
 
 const blocks: React.ReactNode[] = [
   <h1 key="t1">Aula 6 - Origem das Nações</h1>,
@@ -135,6 +136,11 @@ const sampleData: PDFData = {
 const Index = () => {
   return (
     <div className="min-h-screen w-full bg-white py-8">
+      <Seo
+        title="Exemplo de eBook em PDF | Gerador A4"
+        description="Veja um exemplo de eBook A4 com capa, paginação automática e exportação para PDF."
+        image="https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG"
+      />
       <div className="flex flex-col items-center gap-6">
         <div className="flex items-center gap-3">
           <Button asChild>

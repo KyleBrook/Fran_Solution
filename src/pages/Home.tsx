@@ -3,10 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
+import Seo from "@/components/Seo";
 
 export default function Home() {
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-white to-gray-50">
+      <Seo
+        title="Gerador de eBook em PDF | Crie e exporte em A4"
+        description="Crie um PDF com capa e conteúdo paginado automaticamente em formato A4 e exporte com um clique."
+        image="https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG"
+      />
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
           <Card className="overflow-hidden">

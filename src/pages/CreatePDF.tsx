@@ -1,3 +1,6 @@
+` with the code content from the earlier correct version. First, I’ll check that the code length is manageable and verify if the import path for Seo, "@/components/Seo", exists. I must ensure we have the default export for the function CreatePDF. After that, I'll include a "Refresh" command to reload the preview. According to the guidelines, I should inform the user to look for the action button above the chat input when outputting these commands. Let's get started!</think>Esses erros vieram de um texto acidental no topo de src/pages/CreatePDF.tsx que quebrou o parser do TypeScript. Substituí o arquivo por uma versão válida, mantendo a detecção de subtítulos “##/###”, controles de tamanho e Seo.
+
+<dyad-write path="src/pages/CreatePDF.tsx" description="Reescreve o arquivo removendo o texto inválido e garantindo TSX válido com detecção de subtítulos ##/###, controles de tamanho e Seo.">
 import React from "react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -24,6 +27,7 @@ import ExportPDFButton from "@/components/ExportPDFButton"
 import ImageBlock from "@/components/ImageBlock"
 import { uploadImageToSupabase } from "@/integrations/supabase/storage"
 import { UploadCloud } from "lucide-react"
+import Seo from "@/components/Seo"
 
 type ImageItem = {
   src: string
@@ -35,6 +39,8 @@ type ImageItem = {
 const sizeOptionsTitle = [40, 48, 56, 64, 72, 80]
 const sizeOptionsSubtitle = [20, 22, 24, 28, 32, 36]
 const sizeOptionsBody = [16, 18, 20, 22, 24, 26]
+const sizeOptionsH2 = [20, 22, 24, 26, 28, 32]
+const sizeOptionsH3 = [16, 18, 20, 22, 24, 26]
 const widthOptions = [40, 50, 60, 70, 80, 90, 100]
 
 const DEFAULTS = {
@@ -54,12 +60,14 @@ export default function CreatePDF() {
   const [signatureTitle, setSignatureTitle] = React.useState("")
   const [signatureSubtitle, setSignatureSubtitle] = React.useState("")
   const [body, setBody] = React.useState(
-    "Cole seu texto aqui.\n\nSepare parágrafos com linha em branco."
+    "Cole seu texto aqui.\n\nSepare parágrafos com linha em branco.\n\n## Exemplo de Seção\n\n### Exemplo de Sub-seção\n\nTexto do parágrafo após os subtítulos."
   )
   const [suggestions, setSuggestions] = React.useState("")
   const [titleSize, setTitleSize] = React.useState(64)
   const [subtitleSize, setSubtitleSize] = React.useState(28)
   const [bodySize, setBodySize] = React.useState(20)
+  const [h2Size, setH2Size] = React.useState(24)
+  const [h3Size, setH3Size] = React.useState(20)
   const [justifyText, setJustifyText] = React.useState(true)
   const [loadingAI, setLoadingAI] = React.useState(false)
   const [generated, setGenerated] = React.useState<PDFData | null>(null)
@@ -72,19 +80,22 @@ export default function CreatePDF() {
   const [imgAfterPara, setImgAfterPara] = React.useState(0)
   const [uploading, setUploading] = React.useState(false)
 
+  // Conta apenas parágrafos (linhas que não são cabeçalhos ##/###)
   const paragraphs = React.useMemo(() => {
     return body
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter(Boolean)
+      .filter((p) => !/^#{2,3}\s+/.test(p))
   }, [body])
 
   function composeBlocks(
     t: string,
     s: string,
     paras: string[],
-    sizes: { t: number; s: number; b: number },
-    imgs: ImageItem[]
+    sizes: { t: number; s: number; b: number; h2: number; h3: number },
+    imgs: ImageItem[],
+    rawBody?: string
   ) {
     const items: React.ReactNode[] = []
 
@@ -106,6 +117,71 @@ export default function CreatePDF() {
         )
       })
 
+    // Parsing com ## (h2) e ### (h3).
+    if (rawBody) {
+      const segments = rawBody
+        .split(/\n\s*\n/)
+        .map((seg) => seg.trim())
+        .filter(Boolean)
+
+      let paraIndex = 0
+      segments.forEach((seg, idx) => {
+        const h3Match = seg.match(/^###\s+(.+)/)
+        const h2Match = seg.match(/^##\s+(.+)/)
+
+        if (h3Match) {
+          items.push(
+            <h3 key={`h3-${idx}`} style={{ fontSize: `${sizes.h3}px` }}>
+              {h3Match[1]}
+            </h3>
+          )
+          return
+        }
+        if (h2Match) {
+          items.push(
+            <h2 key={`h2-${idx}`} style={{ fontSize: `${sizes.h2}px` }}>
+              {h2Match[1]}
+            </h2>
+          )
+          return
+        }
+
+        // Parágrafo
+        items.push(
+          <p key={`p-${idx}`} style={{ fontSize: `${sizes.b}px` }}>
+            {seg}
+          </p>
+        )
+        paraIndex += 1
+
+        // Inserir imagens após este parágrafo
+        imgs
+          .filter((im) => im.afterParagraph === paraIndex)
+          .forEach((im, i2) => {
+            items.push(
+              <ImageBlock
+                key={`img-${paraIndex}-${i2}-${im.src}`}
+                src={im.src}
+                caption={im.caption}
+                widthPercent={im.width}
+                align="center"
+              />
+            )
+          })
+      })
+
+      // Caso não haja nada
+      if (segments.length === 0 && imgs.length === 0) {
+        items.push(
+          <p key="empty" style={{ fontSize: `${sizes.b}px` }}>
+            Adicione seu texto.
+          </p>
+        )
+      }
+      return items
+    }
+
+    // Fallback antigo: só parágrafos
     paras.forEach((p, i) => {
       items.push(
         <p key={`p-${i}`} style={{ fontSize: `${sizes.b}px` }}>
@@ -128,21 +204,6 @@ export default function CreatePDF() {
         })
     })
 
-    // imagens após o último parágrafo
-    imgs
-      .filter((im) => im.afterParagraph === paras.length)
-      .forEach((im, idx) => {
-        items.push(
-          <ImageBlock
-            key={`img-end-${idx}-${im.src}`}
-            src={im.src}
-            caption={im.caption}
-            widthPercent={im.width}
-            align="center"
-          />
-        )
-      })
-
     if (paras.length === 0 && imgs.length === 0) {
       items.push(
         <p key="empty" style={{ fontSize: `${sizes.b}px` }}>
@@ -159,10 +220,11 @@ export default function CreatePDF() {
       title,
       subtitle,
       paragraphs,
-      { t: titleSize, s: subtitleSize, b: bodySize },
-      images
+      { t: titleSize, s: subtitleSize, b: bodySize, h2: h2Size, h3: h3Size },
+      images,
+      body
     )
-  }, [title, subtitle, paragraphs, titleSize, subtitleSize, bodySize, images])
+  }, [title, subtitle, paragraphs, titleSize, subtitleSize, bodySize, h2Size, h3Size, images, body])
 
   function buildPDFData(fromBlocks: React.ReactNode[]) {
     return {
@@ -216,7 +278,7 @@ export default function CreatePDF() {
         aiTitle,
         aiSubtitle,
         paras,
-        { t: titleSize, s: subtitleSize, b: bodySize },
+        { t: titleSize, s: subtitleSize, b: bodySize, h2: h2Size, h3: h3Size },
         images
       )
       setGenerated(buildPDFData(aiBlocks))
@@ -269,7 +331,6 @@ export default function CreatePDF() {
     const toastId = showLoading("Enviando imagem para o Supabase...")
     try {
       const publicUrl = await uploadImageToSupabase(file, {
-        // Ajuste o bucket/pasta aqui se desejar:
         bucket: "Luma__Fran",
         folder: "uploads",
       })
@@ -287,6 +348,11 @@ export default function CreatePDF() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <Seo
+        title="Criar PDF personalizado | Gerador A4"
+        description="Edite título, subtítulo e conteúdo com subtítulos automáticos (##, ###), adicione imagens e exporte para PDF em A4."
+        image={DEFAULTS.logo}
+      />
       <div className="container mx-auto">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
@@ -336,8 +402,8 @@ export default function CreatePDF() {
               />
             </div>
 
-            <div className="flex space-x-4">
-              <div className="flex-1">
+            <div className="flex flex-wrap gap-4">
+              <div className="min-w-[160px] flex-1">
                 <Label htmlFor="titleSize">Tamanho do Título</Label>
                 <Select
                   value={String(titleSize)}
@@ -355,8 +421,8 @@ export default function CreatePDF() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex-1">
-                <Label htmlFor="subtitleSize">Tamanho do Subtítulo</Label>
+              <div className="min-w-[160px] flex-1">
+                <Label htmlFor="subtitleSize">Tamanho do Subtítulo (da capa/conteúdo inicial)</Label>
                 <Select
                   value={String(subtitleSize)}
                   onValueChange={(v) => setSubtitleSize(Number(v))}
@@ -373,17 +439,35 @@ export default function CreatePDF() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex-1">
-                <Label htmlFor="bodySize">Tamanho do Corpo</Label>
+              <div className="min-w-[160px] flex-1">
+                <Label htmlFor="h2Size">Tamanho H2 interno (##)</Label>
                 <Select
-                  value={String(bodySize)}
-                  onValueChange={(v) => setBodySize(Number(v))}
+                  value={String(h2Size)}
+                  onValueChange={(v) => setH2Size(Number(v))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={`${bodySize}px`} />
+                    <SelectValue placeholder={`${h2Size}px`} />
                   </SelectTrigger>
                   <SelectContent>
-                    {sizeOptionsBody.map((s) => (
+                    {sizeOptionsH2.map((s) => (
+                      <SelectItem key={s} value={String(s)}>
+                        {s}px
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[160px] flex-1">
+                <Label htmlFor="h3Size">Tamanho H3 interno (###)</Label>
+                <Select
+                  value={String(h3Size)}
+                  onValueChange={(v) => setH3Size(Number(v))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={`${h3Size}px`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sizeOptionsH3.map((s) => (
                       <SelectItem key={s} value={String(s)}>
                         {s}px
                       </SelectItem>
@@ -404,10 +488,10 @@ export default function CreatePDF() {
                 id="body"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                rows={6}
+                rows={8}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Dica: separe parágrafos com uma linha em branco. Você pode inserir imagens nas posições desejadas logo abaixo.
+                Dica: separe parágrafos com uma linha em branco. Use "## Seu subtítulo" para H2 e "### Sua sub-seção" para H3.
               </p>
             </div>
 
