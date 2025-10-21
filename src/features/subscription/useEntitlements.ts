@@ -15,20 +15,26 @@ export type Entitlements = {
 export function useEntitlements(): Entitlements {
   const { user } = useAuth();
 
-  // Se o usuário tiver e-mail ilimitado, retorna entitlements liberados
-  if (isUnlimitedEmail(user?.email ?? null)) {
-    return {
-      planId: "pro", // evita exibir alertas do plano Free
-      aiEnabled: true,
-      monthlyExportLimit: Number.MAX_SAFE_INTEGER,
-      watermarkRequired: false,
-      loading: false,
-    };
-  }
+  const isLocalUnlimited = isUnlimitedEmail(user?.email ?? null);
 
-  const { data, isLoading } = useQuery({
+  const { data: isServerUnlimited = false, isLoading: isCheckingUnlimited } = useQuery({
+    queryKey: ["unlimited_whitelist", user?.email],
+    enabled: !!user?.email,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<{ unlimited: boolean }>(
+        "whitelist",
+        { body: { action: "check", email: user!.email! } }
+      );
+      if (error) throw error;
+      return !!(data as any)?.unlimited;
+    },
+  });
+
+  const unlimited = isLocalUnlimited || isServerUnlimited;
+
+  const { data, isLoading: isLoadingSub } = useQuery({
     queryKey: ["subscription", user?.id],
-    enabled: !!user?.id,
+    enabled: !!user?.id && !unlimited,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("subscriptions")
@@ -42,6 +48,16 @@ export function useEntitlements(): Entitlements {
     },
   });
 
+  if (unlimited) {
+    return {
+      planId: "pro",
+      aiEnabled: true,
+      monthlyExportLimit: Number.MAX_SAFE_INTEGER,
+      watermarkRequired: false,
+      loading: isCheckingUnlimited && !!user?.email,
+    };
+  }
+
   const planId = planFromSubscription(
     data ? { status: (data as any)?.status, product_id: (data as any)?.product_id } : undefined
   );
@@ -52,6 +68,6 @@ export function useEntitlements(): Entitlements {
     aiEnabled: plan.aiEnabled,
     monthlyExportLimit: plan.monthlyExportLimit,
     watermarkRequired: plan.watermarkRequired,
-    loading: isLoading && !!user?.id,
+    loading: (isLoadingSub && !!user?.id) || (isCheckingUnlimited && !!user?.email),
   };
 }

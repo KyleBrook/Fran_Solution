@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { LogOut, FileText, User, BookOpen, CreditCard, Sparkles, ArrowRight, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { LogOut, FileText, User, BookOpen, CreditCard, Sparkles, ArrowRight, UserPlus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { showError, showLoading, showSuccess, dismissToast } from "@/utils/toast";
@@ -95,22 +96,28 @@ const Dashboard: React.FC = () => {
     navigate(`/checkout?plan=${plan}&currency=${currency}`);
   };
 
-  const handleInviteFran = async () => {
-    const email = "francielliaguiar@gmail.com";
-    const toastId = showLoading(`Enviando convite para ${email}...`);
+  // Admin: adicionar e-mail à whitelist
+  const [whitelistEmail, setWhitelistEmail] = React.useState("francielliaguiar@gmail.com");
+  const handleAddToWhitelist = async () => {
+    const email = (whitelistEmail || "").trim();
+    if (!email) {
+      showError("Informe um e-mail válido.");
+      return;
+    }
+    const toastId = showLoading(`Adicionando ${email} à whitelist...`);
     try {
       const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>(
-        "invite-user",
-        { body: { email, redirectTo: `${window.location.origin}/login` } }
+        "whitelist",
+        { body: { action: "add", email } }
       );
       if (error || !data?.ok) {
-        showError("Não foi possível enviar o convite.");
+        showError(data?.error || "Não foi possível adicionar o e-mail.");
         return;
       }
-      showSuccess("Convite enviado com sucesso!");
+      showSuccess("E-mail adicionado à whitelist com sucesso!");
     } catch (e) {
       console.error(e);
-      showError("Falha ao enviar o convite.");
+      showError("Falha ao adicionar à whitelist.");
     } finally {
       dismissToast(toastId);
     }
@@ -131,7 +138,7 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
 
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Button asChild className="shadow-md">
               <Link to="/criar-pdf" aria-label="Criar PDF">
                 <BookOpen className="mr-2 h-4 w-4" />
@@ -266,20 +273,35 @@ const Dashboard: React.FC = () => {
                   <span className="text-muted-foreground">Email: </span>
                   <span className="font-medium">{user?.email}</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" onClick={handleManageSubscription}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Gerenciar assinatura
-                  </Button>
-                  {isAdmin && (
-                    <Button variant="outline" onClick={handleInviteFran}>
-                      <Send className="mr-2 h-4 w-4" />
-                      Enviar convite para francielliaguiar@gmail.com
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <Button variant="secondary" onClick={handleManageSubscription}>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Gerenciar assinatura
                     </Button>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="mt-4 rounded-md border p-3 bg-white">
+                      <div className="text-sm font-medium mb-2">Whitelist de uso ilimitado</div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Input
+                          type="email"
+                          placeholder="usuario@exemplo.com"
+                          value={whitelistEmail}
+                          onChange={(e) => setWhitelistEmail(e.target.value)}
+                          className="sm:max-w-xs"
+                        />
+                        <Button variant="outline" onClick={handleAddToWhitelist}>
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Adicionar à whitelist
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Quem estiver nesta lista pode criar eBooks ilimitados (sem marca d’água, com IA).
+                      </p>
+                    </div>
                   )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Use o botão acima para alterar plano, atualizar cartão, cancelar ou ver faturas.
                 </div>
               </CardContent>
             </Card>
