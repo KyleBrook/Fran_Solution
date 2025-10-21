@@ -21,7 +21,7 @@ const corsHeaders = {
 
 type Body = {
   planId: "basic" | "pro";
-  currency?: "brl" | "usd";
+  // currency ignorado no servidor (decidimos por Accept-Language)
   successUrl?: string;
   cancelUrl?: string;
   uiMode?: "redirect" | "embedded";
@@ -38,6 +38,13 @@ const priceTable = {
     usd: { unit_amount: 500, name: "EbookFy Pro (USD)" },
   },
 } as const;
+
+function detectCurrencyFromHeaders(req: Request): "brl" | "usd" {
+  const lang = (req.headers.get("accept-language") || "").toLowerCase();
+  // Heurística simples: se pt-BR presente, cobrar em BRL; caso contrário, USD
+  if (lang.includes("pt-br")) return "brl";
+  return "usd";
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -71,8 +78,8 @@ serve(async (req) => {
 
   const body = (await req.json()) as Body;
   const planId = body.planId;
-  const currency = (body.currency ?? "usd") as "brl" | "usd";
-  const uiMode = body.uiMode ?? "redirect";
+  const currency = detectCurrencyFromHeaders(req); // "brl" | "usd"
+  const uiMode = body.uiMode ?? "embedded";
 
   const price = priceTable[planId]?.[currency];
   if (!price) {

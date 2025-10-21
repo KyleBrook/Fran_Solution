@@ -64,7 +64,6 @@ const Dashboard: React.FC = () => {
         { body: { returnUrl: `${window.location.origin}/dashboard` } }
       );
       if (error || !data?.url) {
-        // Se o usuário ainda não tem assinatura, encaminha para a página de upgrade
         showError("Você ainda não possui assinatura ativa. Escolha um plano para começar.");
         navigate("/upgrade");
         return;
@@ -111,7 +110,7 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <Button asChild className="shadow-md">
               <Link to="/criar-pdf" aria-label="Criar PDF">
                 <BookOpen className="mr-2 h-4 w-4" />
@@ -125,7 +124,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Aviso para plano Free ao entrar no dashboard */}
         {planId === "free" && (
           <Alert className="mb-6">
             <Sparkles className="h-5 w-5" />
@@ -270,7 +268,6 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="text-3xl font-bold">R$ 12,90</div>
-                  <div className="text-xs text-muted-foreground">ou US$ 3/mês</div>
                   <ul className="text-sm space-y-1">
                     <li>• 10 eBooks/mês</li>
                     <li>• Sem marca d’água</li>
@@ -288,7 +285,6 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="text-3xl font-bold">R$ 24,90</div>
-                  <div className="text-xs text-muted-foreground">ou US$ 5/mês</div>
                   <ul className="text-sm space-y-1">
                     <li>• 50 eBooks/mês</li>
                     <li>• Sem marca d’água</li>

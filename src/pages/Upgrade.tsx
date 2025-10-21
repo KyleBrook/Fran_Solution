@@ -72,7 +72,6 @@ export default function Upgrade() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-3xl font-bold">R$ 12,90</div>
-              <div className="text-xs text-muted-foreground">ou US$ 3/mês</div>
               <Feature>10 eBooks/mês</Feature>
               <Feature>Sem marca d’água</Feature>
               <Feature>IA inclusa</Feature>
@@ -88,7 +87,6 @@ export default function Upgrade() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-3xl font-bold">R$ 24,90</div>
-              <div className="text-xs text-muted-foreground">ou US$ 5/mês</div>
               <Feature>50 eBooks/mês</Feature>
               <Feature>Sem marca d’água</Feature>
               <Feature>IA inclusa</Feature>
