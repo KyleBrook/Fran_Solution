@@ -7,10 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, FileText, User, BookOpen, CreditCard } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { LogOut, FileText, User, BookOpen, CreditCard, Sparkles, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { showError, showLoading, showSuccess, dismissToast } from "@/utils/toast";
+import { useEntitlements } from "@/features/subscription/useEntitlements";
+import { getMonthlyExportCount } from "@/features/subscription/usage";
 
 type PdfHistory = {
   id: string;
@@ -23,6 +26,8 @@ type PdfHistory = {
 
 const Dashboard: React.FC = () => {
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { planId } = useEntitlements();
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["pdf_history"],
@@ -36,6 +41,14 @@ const Dashboard: React.FC = () => {
     },
   });
 
+  const { data: monthlyUsed = 0 } = useQuery({
+    queryKey: ["monthly_export_count", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      return user ? await getMonthlyExportCount(user.id) : 0;
+    },
+  });
+
   const total = history?.length ?? 0;
   const last = history?.[0];
 
@@ -46,23 +59,41 @@ const Dashboard: React.FC = () => {
   const handleManageSubscription = async () => {
     const toastId = showLoading("Abrindo gerenciador de assinatura...");
     try {
-      const { data, error } = await supabase.functions.invoke<{ url: string }>("create-portal-session", {
-        body: { returnUrl: `${window.location.origin}/dashboard` },
-      });
-      if (error) throw error;
-      const url = (data as any)?.url;
-      if (!url) {
-        showError("Não foi possível abrir o portal. Tente novamente.");
+      const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>(
+        "create-portal-session",
+        { body: { returnUrl: `${window.location.origin}/dashboard` } }
+      );
+      if (error || !data?.url) {
+        // Se o usuário ainda não tem assinatura, encaminha para a página de upgrade
+        showError("Você ainda não possui assinatura ativa. Escolha um plano para começar.");
+        navigate("/upgrade");
         return;
       }
       showSuccess("Redirecionando para o portal da Stripe...");
-      window.location.href = url;
+      window.location.href = data.url!;
     } catch (e) {
       console.error(e);
-      showError("Não foi possível abrir o portal da assinatura.");
+      showError("Não foi possível abrir o portal da assinatura. Tente novamente.");
     } finally {
       dismissToast(toastId);
     }
+  };
+
+  const detectCurrency = (): "brl" | "usd" => {
+    const lang = (navigator.language || "").toLowerCase();
+    if (lang.includes("pt-br")) return "brl";
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      if (tz.toLowerCase().includes("sao_paulo") || tz.toLowerCase().includes("america/sao_paulo")) {
+        return "brl";
+      }
+    } catch {}
+    return "usd";
+  };
+
+  const goToCheckout = (plan: "basic" | "pro") => {
+    const currency = detectCurrency();
+    navigate(`/checkout?plan=${plan}&currency=${currency}`);
   };
 
   return (
@@ -94,11 +125,35 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Aviso para plano Free ao entrar no dashboard */}
+        {planId === "free" && (
+          <Alert className="mb-6">
+            <Sparkles className="h-5 w-5" />
+            <AlertTitle>Você tem 1 eBook gratuito por mês</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                {monthlyUsed === 0
+                  ? "Aproveite seu eBook gratuito."
+                  : `Você já utilizou ${monthlyUsed} de 1 eBook gratuito este mês.`}
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" asChild>
+                  <Link to="/criar-pdf">Criar agora</Link>
+                </Button>
+                <Button size="sm" onClick={() => navigate("/upgrade")}>
+                  Fazer upgrade <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList>
+          <TabsList className="flex flex-wrap">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="history">Histórico de PDFs</TabsTrigger>
             <TabsTrigger value="account">Conta</TabsTrigger>
+            <TabsTrigger value="plans">Planos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
@@ -203,6 +258,55 @@ const Dashboard: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="plans" className="mt-4">
+            <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Basic <Badge>Recomendado</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-3xl font-bold">R$ 12,90</div>
+                  <div className="text-xs text-muted-foreground">ou US$ 3/mês</div>
+                  <ul className="text-sm space-y-1">
+                    <li>• 10 eBooks/mês</li>
+                    <li>• Sem marca d’água</li>
+                    <li>• IA inclusa</li>
+                  </ul>
+                  <Button className="w-full" onClick={() => goToCheckout("basic")}>
+                    Assinar Basic
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pro</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-3xl font-bold">R$ 24,90</div>
+                  <div className="text-xs text-muted-foreground">ou US$ 5/mês</div>
+                  <ul className="text-sm space-y-1">
+                    <li>• 50 eBooks/mês</li>
+                    <li>• Sem marca d’água</li>
+                    <li>• IA inclusa</li>
+                  </ul>
+                  <Button className="w-full" onClick={() => goToCheckout("pro")}>
+                    Assinar Pro
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-6 text-sm text-muted-foreground">
+              Quer ver mais detalhes? Visite a página completa de planos.
+              <Button variant="link" className="px-1" asChild>
+                <Link to="/upgrade">Abrir página de Upgrade</Link>
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
