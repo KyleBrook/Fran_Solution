@@ -24,6 +24,8 @@ type Body = {
   currency?: "brl" | "usd";
   successUrl?: string;
   cancelUrl?: string;
+  uiMode?: "redirect" | "embedded";
+  returnUrl?: string; // obrigatório no embedded
 };
 
 const priceTable = {
@@ -55,7 +57,7 @@ serve(async (req) => {
 
   const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
 
-  // Autenticar usuário via token do supabase-js enviado no Authorization
+  // Autenticação do usuário
   const authHeader = req.headers.get("Authorization") ?? "";
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
@@ -70,6 +72,7 @@ serve(async (req) => {
   const body = (await req.json()) as Body;
   const planId = body.planId;
   const currency = (body.currency ?? "usd") as "brl" | "usd";
+  const uiMode = body.uiMode ?? "redirect";
 
   const price = priceTable[planId]?.[currency];
   if (!price) {
@@ -79,8 +82,9 @@ serve(async (req) => {
   const origin = new URL(req.url).origin;
   const success_url = body.successUrl || `${origin}/dashboard`;
   const cancel_url = body.cancelUrl || `${origin}/upgrade`;
+  const return_url = body.returnUrl || `${origin}/dashboard`; // usado no embedded
 
-  const session = await stripe.checkout.sessions.create({
+  const baseParams: Stripe.Checkout.SessionCreateParams = {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [
@@ -88,23 +92,37 @@ serve(async (req) => {
         quantity: 1,
         price_data: {
           currency,
-          unit_amount: price.unit_amount, // em centavos
+          unit_amount: price.unit_amount,
           recurring: { interval: "month" },
           product_data: { name: price.name },
         },
       },
     ],
-    success_url,
-    cancel_url,
     customer_email: user.email || undefined,
-    // Ajuda o webhook a mapear o usuário e o plano
     metadata: { user_id: user.id, plan_id: planId },
-    subscription_data: {
-      metadata: { user_id: user.id, plan_id: planId },
-    },
-  });
+    subscription_data: { metadata: { user_id: user.id, plan_id: planId } },
+  };
 
-  return new Response(JSON.stringify({ url: session.url }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  let session: Stripe.Checkout.Session;
+
+  if (uiMode === "embedded") {
+    session = await stripe.checkout.sessions.create({
+      ...baseParams,
+      ui_mode: "embedded",
+      return_url,
+    });
+    return new Response(
+      JSON.stringify({ client_secret: session.client_secret }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } else {
+    session = await stripe.checkout.sessions.create({
+      ...baseParams,
+      success_url,
+      cancel_url,
+    });
+    return new Response(JSON.stringify({ url: session.url }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 });

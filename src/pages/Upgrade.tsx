@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import Seo from "@/components/Seo";
 import { useEntitlements } from "@/features/subscription/useEntitlements";
-import { showError, showLoading, showSuccess, dismissToast } from "@/utils/toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex items-start gap-2 text-sm">
@@ -17,6 +16,7 @@ const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 export default function Upgrade() {
   const { planId } = useEntitlements();
+  const navigate = useNavigate();
 
   const detectCurrency = (): "brl" | "usd" => {
     const lang = (navigator.language || "").toLowerCase();
@@ -30,27 +30,9 @@ export default function Upgrade() {
     return "usd";
   };
 
-  const handleSelect = async (plan: "basic" | "pro") => {
-    const toastId = showLoading("Redirecionando para pagamento...");
-    try {
-      const { data, error } = await supabase.functions.invoke<{ url: string }>("create-checkout-session", {
-        body: {
-          planId: plan,
-          currency: detectCurrency(),
-          successUrl: `${window.location.origin}/dashboard`,
-          cancelUrl: `${window.location.origin}/upgrade`,
-        },
-      });
-      if (error) throw error;
-      const url = (data as any)?.url;
-      if (!url) throw new Error("URL do checkout não recebida.");
-      window.location.href = url;
-    } catch (err) {
-      console.error(err);
-      showError("Não foi possível iniciar o checkout. Verifique as chaves/preços do Stripe.");
-    } finally {
-      dismissToast(toastId);
-    }
+  const goToCheckout = (plan: "basic" | "pro") => {
+    const currency = detectCurrency();
+    navigate(`/checkout?plan=${plan}&currency=${currency}`);
   };
 
   return (
@@ -94,7 +76,7 @@ export default function Upgrade() {
               <Feature>10 eBooks/mês</Feature>
               <Feature>Sem marca d’água</Feature>
               <Feature>IA inclusa</Feature>
-              <Button className="w-full" onClick={() => handleSelect("basic")}>
+              <Button className="w-full" onClick={() => goToCheckout("basic")}>
                 Assinar Basic
               </Button>
             </CardContent>
@@ -110,7 +92,7 @@ export default function Upgrade() {
               <Feature>50 eBooks/mês</Feature>
               <Feature>Sem marca d’água</Feature>
               <Feature>IA inclusa</Feature>
-              <Button className="w-full" onClick={() => handleSelect("pro")}>
+              <Button className="w-full" onClick={() => goToCheckout("pro")}>
                 Assinar Pro
               </Button>
             </CardContent>

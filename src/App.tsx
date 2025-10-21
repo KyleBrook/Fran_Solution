@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Upgrade from "./pages/Upgrade";
 import AuthProvider from "./components/auth/AuthProvider";
 import PrivateRoute from "./components/auth/PrivateRoute";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/criar-pdf" element={<PrivateRoute><CreatePDF /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/upgrade" element={<PrivateRoute><Upgrade /></PrivateRoute>} />
+            <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
 
             {/* Catch-all protegido */}
             <Route path="*" element={<PrivateRoute><NotFound /></PrivateRoute>} />
