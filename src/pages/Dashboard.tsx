@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { LogOut, FileText, User, BookOpen, CreditCard, Sparkles, ArrowRight } from "lucide-react";
+import { LogOut, FileText, User, BookOpen, CreditCard, Sparkles, ArrowRight, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { showError, showLoading, showSuccess, dismissToast } from "@/utils/toast";
@@ -93,6 +93,27 @@ const Dashboard: React.FC = () => {
   const goToCheckout = (plan: "basic" | "pro") => {
     const currency = detectCurrency();
     navigate(`/checkout?plan=${plan}&currency=${currency}`);
+  };
+
+  const handleInviteFran = async () => {
+    const email = "francielliaguiar@gmail.com";
+    const toastId = showLoading(`Enviando convite para ${email}...`);
+    try {
+      const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>(
+        "invite-user",
+        { body: { email, redirectTo: `${window.location.origin}/login` } }
+      );
+      if (error || !data?.ok) {
+        showError("Não foi possível enviar o convite.");
+        return;
+      }
+      showSuccess("Convite enviado com sucesso!");
+    } catch (e) {
+      console.error(e);
+      showError("Falha ao enviar o convite.");
+    } finally {
+      dismissToast(toastId);
+    }
   };
 
   return (
@@ -250,6 +271,12 @@ const Dashboard: React.FC = () => {
                     <CreditCard className="mr-2 h-4 w-4" />
                     Gerenciar assinatura
                   </Button>
+                  {isAdmin && (
+                    <Button variant="outline" onClick={handleInviteFran}>
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar convite para francielliaguiar@gmail.com
+                    </Button>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Use o botão acima para alterar plano, atualizar cartão, cancelar ou ver faturas.
