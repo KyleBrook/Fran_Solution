@@ -25,6 +25,7 @@ import ImageBlock from "@/components/ImageBlock"
 import { uploadImageToSupabase } from "@/integrations/supabase/storage"
 import { UploadCloud } from "lucide-react"
 import Seo from "@/components/Seo"
+import { useEntitlements } from "@/features/subscription/useEntitlements"
 
 type ImageItem = {
   src: string
@@ -77,6 +78,8 @@ export default function CreatePDF() {
   const [imgAfterPara, setImgAfterPara] = React.useState(0)
   const [uploading, setUploading] = React.useState(false)
 
+  const { aiEnabled } = useEntitlements()
+
   // Conta apenas parágrafos (linhas que não são cabeçalhos ##/###)
   const paragraphs = React.useMemo(() => {
     return body
@@ -114,7 +117,6 @@ export default function CreatePDF() {
         )
       })
 
-    // Se tivermos o corpo bruto, fazemos parsing com ## (h2) e ### (h3).
     if (rawBody) {
       const segments = rawBody
         .split(/\n\s*\n/)
@@ -143,7 +145,6 @@ export default function CreatePDF() {
           return
         }
 
-        // Parágrafo
         items.push(
           <p key={"p-" + idx} style={{ fontSize: sizes.b }}>
             {seg}
@@ -151,7 +152,6 @@ export default function CreatePDF() {
         )
         paraIndex += 1
 
-        // Inserir imagens após este parágrafo
         imgs
           .filter((im) => im.afterParagraph === paraIndex)
           .forEach((im, i2) => {
@@ -177,7 +177,6 @@ export default function CreatePDF() {
       return items
     }
 
-    // Fallback antigo: só parágrafos
     paras.forEach((p, i) => {
       items.push(
         <p key={"p-" + i} style={{ fontSize: sizes.b }}>
@@ -251,6 +250,10 @@ export default function CreatePDF() {
   }
 
   const handleGenerateWithAI = async () => {
+    if (!aiEnabled) {
+      showError("A IA está disponível nos planos Basic e Pro. Faça o upgrade para usar.");
+      return;
+    }
     if (loadingAI) return
     setLoadingAI(true)
     const toastId = showLoading("Gerando com IA...")
@@ -356,6 +359,16 @@ export default function CreatePDF() {
             <CardTitle>Gerar PDF Personalizado</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="rounded-md border bg-white p-3 text-xs text-muted-foreground">
+              {aiEnabled ? (
+                <span>IA disponível no seu plano.</span>
+              ) : (
+                <span>
+                  IA indisponível no plano Free. <a href="/upgrade" className="underline">Faça upgrade</a> para usar a IA.
+                </span>
+              )}
+            </div>
+
             <div>
               <Label htmlFor="title">Título</Label>
               <Input
@@ -396,6 +409,7 @@ export default function CreatePDF() {
                 onChange={(e) => setSuggestions(e.target.value)}
                 rows={3}
                 placeholder="Adicione instruções extras para a IA refinar seu texto"
+                disabled={!aiEnabled}
               />
             </div>
 
@@ -600,8 +614,8 @@ export default function CreatePDF() {
 
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
               <Button onClick={handleGenerate}>Gerar PDF</Button>
-              <Button onClick={handleGenerateWithAI} disabled={loadingAI}>
-                {loadingAI ? "Gerando IA…" : "Gerar com IA"}
+              <Button onClick={handleGenerateWithAI} disabled={loadingAI || !aiEnabled}>
+                {aiEnabled ? (loadingAI ? "Gerando IA…" : "Gerar com IA") : "IA indisponível"}
               </Button>
               <Button variant="outline" onClick={handlePrint}>
                 Imprimir
