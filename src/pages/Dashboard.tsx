@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, FileText, User } from "lucide-react";
+import { LogOut, FileText, User, BookOpen } from "lucide-react";
+import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
 
 type PdfHistory = {
@@ -55,10 +56,19 @@ const Dashboard: React.FC = () => {
               Bem-vindo{user?.email ? `, ${user.email}` : ""}!
             </p>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button asChild className="shadow-md">
+              <Link to="/criar-pdf" aria-label="Criar PDF">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Criar PDF
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
