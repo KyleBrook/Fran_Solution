@@ -26,6 +26,17 @@ type Body = {
   cancelUrl?: string;
 };
 
+const priceTable = {
+  basic: {
+    brl: { unit_amount: 1290, name: "EbookFy Basic (BRL)" },
+    usd: { unit_amount: 300, name: "EbookFy Basic (USD)" },
+  },
+  pro: {
+    brl: { unit_amount: 2490, name: "EbookFy Pro (BRL)" },
+    usd: { unit_amount: 500, name: "EbookFy Pro (USD)" },
+  },
+} as const;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -58,23 +69,11 @@ serve(async (req) => {
 
   const body = (await req.json()) as Body;
   const planId = body.planId;
-  const currency = body.currency ?? "usd";
+  const currency = (body.currency ?? "usd") as "brl" | "usd";
 
-  // Seleciona price ID conforme plano e moeda
-  const priceMap = {
-    basic: {
-      brl: Deno.env.get("STRIPE_PRICE_BASIC_BRL"),
-      usd: Deno.env.get("STRIPE_PRICE_BASIC_USD"),
-    },
-    pro: {
-      brl: Deno.env.get("STRIPE_PRICE_PRO_BRL"),
-      usd: Deno.env.get("STRIPE_PRICE_PRO_USD"),
-    },
-  } as const;
-
-  const priceId = priceMap[planId]?.[currency];
-  if (!priceId) {
-    return new Response("Price not configured", { status: 400, headers: corsHeaders });
+  const price = priceTable[planId]?.[currency];
+  if (!price) {
+    return new Response("Unsupported plan/currency", { status: 400, headers: corsHeaders });
   }
 
   const origin = new URL(req.url).origin;
@@ -84,7 +83,17 @@ serve(async (req) => {
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency,
+          unit_amount: price.unit_amount, // em centavos
+          recurring: { interval: "month" },
+          product_data: { name: price.name },
+        },
+      },
+    ],
     success_url,
     cancel_url,
     customer_email: user.email || undefined,
