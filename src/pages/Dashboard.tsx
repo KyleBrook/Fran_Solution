@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { LogOut, FileText, User } from "lucide-react";
 import Seo from "@/components/Seo";
 
@@ -19,7 +20,7 @@ type PdfHistory = {
 };
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["pdf_history"],
@@ -46,8 +47,13 @@ const Dashboard: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Bem-vindo{user?.email ? `, ${user.email}` : ""}!</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold">Dashboard</h1>
+              {isAdmin && <Badge variant="secondary">Admin</Badge>}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Bem-vindo{user?.email ? `, ${user.email}` : ""}!
+            </p>
           </div>
           <Button variant="outline" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />

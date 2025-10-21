@@ -2,17 +2,20 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { useNavigate, useLocation } from "react-router-dom";
+import { isAdminEmail } from "@/config/admins";
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  isAdmin: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -23,6 +26,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,10 +36,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     supabase.auth.getSession().then(({ data }) => {
       if (!isMounted) return;
       setSession(data.session);
-      setUser(data.session?.user ?? null);
+      const currentUser = data.session?.user ?? null;
+      setUser(currentUser);
+      setIsAdmin(isAdminEmail(currentUser?.email ?? null));
       setLoading(false);
 
-      // Se não autenticado e não está numa rota pública, manda para /login
       if (!data.session && !PUBLIC_ROUTES.includes(location.pathname)) {
         navigate("/login", { replace: true });
       }
@@ -43,7 +48,9 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
-      setUser(newSession?.user ?? null);
+      const newUser = newSession?.user ?? null;
+      setUser(newUser);
+      setIsAdmin(isAdminEmail(newUser?.email ?? null));
 
       if (event === "SIGNED_IN") {
         navigate("/dashboard", { replace: true });
@@ -59,7 +66,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   }, [navigate, location.pathname]);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
