@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import Seo from "@/components/Seo";
 import { useEntitlements } from "@/features/subscription/useEntitlements";
-import { showSuccess } from "@/utils/toast";
+import { showError, showLoading, showSuccess, dismissToast } from "@/utils/toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex items-start gap-2 text-sm">
@@ -17,9 +18,39 @@ const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 export default function Upgrade() {
   const { planId } = useEntitlements();
 
-  const handleSelect = (plan: "basic" | "pro") => {
-    // Integração Stripe entrará aqui (checkout/portal)
-    showSuccess("Em breve! Envie as credenciais do Stripe para habilitar o checkout.");
+  const detectCurrency = (): "brl" | "usd" => {
+    const lang = (navigator.language || "").toLowerCase();
+    if (lang.includes("pt-br")) return "brl";
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      if (tz.toLowerCase().includes("sao_paulo") || tz.toLowerCase().includes("america/sao_paulo")) {
+        return "brl";
+      }
+    } catch {}
+    return "usd";
+  };
+
+  const handleSelect = async (plan: "basic" | "pro") => {
+    const toastId = showLoading("Redirecionando para pagamento...");
+    try {
+      const { data, error } = await supabase.functions.invoke<{ url: string }>("create-checkout-session", {
+        body: {
+          planId: plan,
+          currency: detectCurrency(),
+          successUrl: `${window.location.origin}/dashboard`,
+          cancelUrl: `${window.location.origin}/upgrade`,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.url;
+      if (!url) throw new Error("URL do checkout não recebida.");
+      window.location.href = url;
+    } catch (err) {
+      console.error(err);
+      showError("Não foi possível iniciar o checkout. Verifique as chaves/preços do Stripe.");
+    } finally {
+      dismissToast(toastId);
+    }
   };
 
   return (
