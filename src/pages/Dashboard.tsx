@@ -297,7 +297,11 @@ const Dashboard: React.FC = () => {
               </Card>
             </div>
 
-            <div className="mt-6 text-sm text-muted-foreground">
+            <p className="mt-6 text-sm text-muted-foreground">
+              Todos os planos são por assinatura mensal. Você pode cancelar a qualquer momento em Conta &gt; Gerenciar assinatura.
+            </p>
+
+            <div className="mt-4 text-sm text-muted-foreground">
               Quer ver mais detalhes? Visite a página completa de planos.
               <Button variant="link" className="px-1" asChild>
                 <Link to="/upgrade">Abrir página de Upgrade</Link>

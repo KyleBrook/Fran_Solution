@@ -61,6 +61,9 @@ export default function Checkout() {
             </Button>
           </CardHeader>
           <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Esta é uma assinatura mensal. Você pode cancelar a qualquer momento em Dashboard &gt; Conta &gt; Gerenciar assinatura.
+            </p>
             {errorMsg ? (
               <div className="text-sm text-red-600">{errorMsg}</div>
             ) : !clientSecret ? (

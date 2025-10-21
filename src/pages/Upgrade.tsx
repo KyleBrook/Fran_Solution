@@ -96,6 +96,10 @@ export default function Upgrade() {
             </CardContent>
           </Card>
         </div>
+
+        <p className="text-sm text-muted-foreground text-center mt-6">
+          Todos os planos são por assinatura mensal. Você pode cancelar a qualquer momento em Dashboard &gt; Conta &gt; Gerenciar assinatura.
+        </p>
       </div>
     </div>
   );
