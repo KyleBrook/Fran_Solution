@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { plans, planFromSubscription, type PlanId } from "./plans";
+import { isUnlimitedEmail } from "@/config/unlimited";
 
 export type Entitlements = {
   planId: PlanId;
@@ -13,6 +14,17 @@ export type Entitlements = {
 
 export function useEntitlements(): Entitlements {
   const { user } = useAuth();
+
+  // Se o usuário tiver e-mail ilimitado, retorna entitlements liberados
+  if (isUnlimitedEmail(user?.email ?? null)) {
+    return {
+      planId: "pro", // evita exibir alertas do plano Free
+      aiEnabled: true,
+      monthlyExportLimit: Number.MAX_SAFE_INTEGER,
+      watermarkRequired: false,
+      loading: false,
+    };
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["subscription", user?.id],
