@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, FileText, User, BookOpen } from "lucide-react";
+import { LogOut, FileText, User, BookOpen, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
+import { showError, showLoading, showSuccess, dismissToast } from "@/utils/toast";
 
 type PdfHistory = {
   id: string;
@@ -40,6 +41,28 @@ const Dashboard: React.FC = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  const handleManageSubscription = async () => {
+    const toastId = showLoading("Abrindo gerenciador de assinatura...");
+    try {
+      const { data, error } = await supabase.functions.invoke<{ url: string }>("create-portal-session", {
+        body: { returnUrl: `${window.location.origin}/dashboard` },
+      });
+      if (error) throw error;
+      const url = (data as any)?.url;
+      if (!url) {
+        showError("Não foi possível abrir o portal. Tente novamente.");
+        return;
+      }
+      showSuccess("Redirecionando para o portal da Stripe...");
+      window.location.href = url;
+    } catch (e) {
+      console.error(e);
+      showError("Não foi possível abrir o portal da assinatura.");
+    } finally {
+      dismissToast(toastId);
+    }
   };
 
   return (
@@ -164,13 +187,19 @@ const Dashboard: React.FC = () => {
                   <User className="h-5 w-5" /> Informações da Conta
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-4">
                 <div className="text-sm">
                   <span className="text-muted-foreground">Email: </span>
                   <span className="font-medium">{user?.email}</span>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={handleManageSubscription}>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Gerenciar assinatura
+                  </Button>
+                </div>
                 <div className="text-xs text-muted-foreground">
-                  Use o botão "Sair" acima para encerrar a sessão.
+                  Use o botão acima para alterar plano, atualizar cartão, cancelar ou ver faturas.
                 </div>
               </CardContent>
             </Card>
