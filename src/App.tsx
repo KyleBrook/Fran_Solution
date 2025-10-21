@@ -22,20 +22,17 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/criar-pdf" element={<CreatePDF />} />
+            {/* Rota pública */}
             <Route path="/login" element={<Login />} />
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+
+            {/* Rotas privadas */}
+            <Route path="/" element={<PrivateRoute><Index /></PrivateRoute>} />
+            <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+            <Route path="/criar-pdf" element={<PrivateRoute><CreatePDF /></PrivateRoute>} />
+            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+
+            {/* Catch-all protegido */}
+            <Route path="*" element={<PrivateRoute><NotFound /></PrivateRoute>} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

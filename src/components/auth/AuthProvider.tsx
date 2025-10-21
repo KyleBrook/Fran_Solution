@@ -17,6 +17,8 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const PUBLIC_ROUTES = ["/login"];
+
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -33,8 +35,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       setUser(data.session?.user ?? null);
       setLoading(false);
 
-      // Redirecionar conforme estado inicial
-      if (!data.session && location.pathname.startsWith("/dashboard")) {
+      // Se não autenticado e não está numa rota pública, manda para /login
+      if (!data.session && !PUBLIC_ROUTES.includes(location.pathname)) {
         navigate("/login", { replace: true });
       }
     });
