@@ -17,6 +17,11 @@ const Login: React.FC = () => {
     }
   }, [user, navigate]);
 
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard`
+      : "https://ebookfy.pro/dashboard";
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-white to-gray-50 flex items-center justify-center p-4">
       <Seo
@@ -34,7 +39,11 @@ const Login: React.FC = () => {
             providers={[]}
             appearance={{ theme: ThemeSupa }}
             theme="light"
+            redirectTo={redirectTo}
           />
+          <p className="mt-3 text-xs text-muted-foreground text-center">
+            Caso não receba o e-mail, verifique a caixa de SPAM. Se persistir, o envio de e-mails pode não estar configurado no Supabase.
+          </p>
         </CardContent>
       </Card>
     </div>
