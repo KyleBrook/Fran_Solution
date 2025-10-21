@@ -606,7 +606,7 @@ export default function CreatePDF() {
               <Button variant="outline" onClick={handlePrint}>
                 Imprimir
               </Button>
-              <ExportPDFButton filename={exportFilename} disabled={!generated} />
+              <ExportPDFButton filename={exportFilename} disabled={!generated} titleForHistory={title} />
             </div>
           </CardContent>
         </Card>

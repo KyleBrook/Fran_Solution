@@ -147,7 +147,7 @@ const Index = () => {
           <Button asChild>
             <Link to="/criar-pdf">Criar PDF personalizado</Link>
           </Button>
-          <ExportPDFButton filename="aula-06.pdf" />
+          <ExportPDFButton filename="aula-06.pdf" titleForHistory="Aula 6 - Origem das Nações" />
         </div>
         <PDFGenerator data={sampleData} />
       </div>
