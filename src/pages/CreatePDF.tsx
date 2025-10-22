@@ -26,12 +26,13 @@ import { uploadImageToSupabase } from "@/integrations/supabase/storage"
 import { UploadCloud } from "lucide-react"
 import Seo from "@/components/Seo"
 import { useEntitlements } from "@/features/subscription/useEntitlements"
+import RichTextEditor from "@/components/RichTextEditor"
 
 type ImageItem = {
   src: string
   caption?: string
-  width: number // percent
-  afterParagraph: number // 0..N (0 = antes do 1º parágrafo, N = após o último)
+  width: number
+  afterParagraph: number
 }
 
 const sizeOptionsTitle = [40, 48, 56, 64, 72, 80]
@@ -68,9 +69,7 @@ export default function CreatePDF() {
   const [h3Size, setH3Size] = React.useState(20)
   const [justifyText, setJustifyText] = React.useState(true)
   const [loadingAI, setLoadingAI] = React.useState(false)
-  const [generated, setGenerated] = React.useState<PDFData | null>(null)
 
-  // Imagens
   const [images, setImages] = React.useState<ImageItem[]>([])
   const [imgUrl, setImgUrl] = React.useState("")
   const [imgCaption, setImgCaption] = React.useState("")
@@ -80,7 +79,6 @@ export default function CreatePDF() {
 
   const { aiEnabled } = useEntitlements()
 
-  // Conta apenas parágrafos (linhas que não são cabeçalhos ##/###)
   const paragraphs = React.useMemo(() => {
     return body
       .split(/\n\s*\n/)
@@ -102,7 +100,6 @@ export default function CreatePDF() {
     if (t.trim()) items.push(<h1 key="title" style={{ fontSize: sizes.t }}>{t}</h1>)
     if (s.trim()) items.push(<h2 key="subtitle" style={{ fontSize: sizes.s }}>{s}</h2>)
 
-    // imagens com afterParagraph === 0 (antes do primeiro parágrafo)
     imgs
       .filter((im) => im.afterParagraph === 0)
       .forEach((im, idx) => {
@@ -221,7 +218,7 @@ export default function CreatePDF() {
     )
   }, [title, subtitle, paragraphs, titleSize, subtitleSize, bodySize, h2Size, h3Size, images, body])
 
-  function buildPDFData(fromBlocks: React.ReactNode[]) {
+  const buildPDFData = React.useCallback((fromBlocks: React.ReactNode[]): PDFData => {
     return {
       cover: {
         background: DEFAULTS.coverBackground,
@@ -236,23 +233,23 @@ export default function CreatePDF() {
       blocks: fromBlocks,
       justifyText,
       language: "pt-BR",
-    } as PDFData
-  }
+    }
+  }, [justifyText, signatureSubtitle, signatureTitle, subtitle, title])
+
+  const pdfData = React.useMemo(() => buildPDFData(blocks), [buildPDFData, blocks])
 
   const handleGenerate = () => {
-    setGenerated(buildPDFData(blocks))
-    showSuccess("PDF gerado!")
+    showSuccess("Pré-visualização atualizada!")
   }
 
   const handlePrint = () => {
-    if (!generated) return
     window.print()
   }
 
   const handleGenerateWithAI = async () => {
     if (!aiEnabled) {
-      showError("A IA está disponível nos planos Basic e Pro. Faça o upgrade para usar.");
-      return;
+      showError("A IA está disponível nos planos Basic e Pro. Faça o upgrade para usar.")
+      return
     }
     if (loadingAI) return
     setLoadingAI(true)
@@ -272,19 +269,16 @@ export default function CreatePDF() {
       setTitle(aiTitle)
       setSubtitle(aiSubtitle)
       setBody(paras.join("\n\n"))
-
-      const aiBlocks = composeBlocks(
-        aiTitle,
-        aiSubtitle,
-        paras,
-        { t: titleSize, s: subtitleSize, b: bodySize, h2: h2Size, h3: h3Size },
-        images
-      )
-      setGenerated(buildPDFData(aiBlocks))
       showSuccess("Conteúdo IA aplicado")
     } catch (err) {
       console.error(err)
-      showError("Falha ao gerar com IA.")
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err && "message" in err
+          ? String((err as { message: unknown }).message)
+          : "Falha ao gerar com IA."
+      showError(message)
     } finally {
       dismissToast(toastId)
       setLoadingAI(false)
@@ -337,7 +331,13 @@ export default function CreatePDF() {
       showSuccess("Imagem enviada! URL preenchida automaticamente.")
     } catch (err) {
       console.error(err)
-      showError("Falha ao enviar imagem. Verifique o bucket e as permissões.")
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err && "message" in err
+          ? String((err as { message: unknown }).message)
+          : "Falha ao enviar imagem."
+      showError(`Falha ao enviar imagem: ${message}`)
     } finally {
       dismissToast(toastId)
       setUploading(false)
@@ -494,15 +494,10 @@ export default function CreatePDF() {
             </div>
 
             <div>
-              <Label htmlFor="body">Conteúdo</Label>
-              <Textarea
-                id="body"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={8}
-              />
+              <Label>Conteúdo</Label>
+              <RichTextEditor value={body} onChange={setBody} />
               <p className="text-xs text-muted-foreground mt-1">
-                Dica: separe parágrafos com uma linha em branco. Use "## Seu subtítulo" para H2 e "### Sua sub-seção" para H3.
+                Dica: use a barra flutuante selecionando trechos para aplicar negrito, itálico, listas e tamanhos.
               </p>
             </div>
 
@@ -613,22 +608,24 @@ export default function CreatePDF() {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-              <Button onClick={handleGenerate}>Gerar PDF</Button>
+              <Button onClick={handleGenerate}>Atualizar prévia</Button>
               <Button onClick={handleGenerateWithAI} disabled={loadingAI || !aiEnabled}>
                 {aiEnabled ? (loadingAI ? "Gerando IA…" : "Gerar com IA") : "IA indisponível"}
               </Button>
               <Button variant="outline" onClick={handlePrint}>
                 Imprimir
               </Button>
-              <ExportPDFButton filename={exportFilename} disabled={!generated} titleForHistory={title} />
+              <ExportPDFButton
+                filename={exportFilename}
+                disabled={blocks.length === 0}
+                titleForHistory={title}
+              />
             </div>
           </CardContent>
         </Card>
-        {generated && (
-          <div className="mt-8">
-            <PDFGenerator data={generated} />
-          </div>
-        )}
+        <div className="mt-8">
+          <PDFGenerator data={pdfData} />
+        </div>
       </div>
     </div>
   )
