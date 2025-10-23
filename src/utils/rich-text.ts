@@ -19,6 +19,19 @@ const FONT_SIZE_MAP: Record<string, number> = {
 
 const DEFAULT_FONT_SIZE_PX = 16;
 
+const SIZE_TOKEN_REGEX = /\{\{(\/?size(?::\d{1,3})?)\}\}/gi;
+const SIZE_TOKEN_OPEN_PREFIX = "size:";
+const SIZE_TOKEN_CLOSE = "/size";
+const MIN_ALLOWED_FONT_SIZE = 10;
+const MAX_ALLOWED_FONT_SIZE = 200;
+
+function clampFontSize(value: number): number | null {
+  if (!Number.isFinite(value)) return null;
+  const rounded = Math.round(value);
+  if (rounded < MIN_ALLOWED_FONT_SIZE || rounded > MAX_ALLOWED_FONT_SIZE) return null;
+  return rounded;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -36,6 +49,90 @@ function escapeAttribute(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function renderInlineWithSizeTokens(text: string): string {
+  let result = "";
+  let lastIndex = 0;
+  const stack: number[] = [];
+
+  SIZE_TOKEN_REGEX.lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = SIZE_TOKEN_REGEX.exec(text)) !== null) {
+    const [fullMatch, rawBody] = match;
+    const index = match.index;
+
+    if (index > lastIndex) {
+      result += escapeHtml(text.slice(lastIndex, index));
+    }
+
+    const body = (rawBody || "").toLowerCase();
+
+    if (body.startsWith(SIZE_TOKEN_CLOSE)) {
+      if (stack.length > 0) {
+        stack.pop();
+        result += "</span>";
+      } else {
+        result += escapeHtml(fullMatch);
+      }
+    } else if (body.startsWith(SIZE_TOKEN_OPEN_PREFIX)) {
+      const sizeStr = body.slice(SIZE_TOKEN_OPEN_PREFIX.length);
+      const size = clampFontSize(Number(sizeStr));
+      if (size) {
+        stack.push(size);
+        result += `<span data-font-size="${size}" style="font-size: ${size}px;">`;
+      } else {
+        result += escapeHtml(fullMatch);
+      }
+    } else {
+      result += escapeHtml(fullMatch);
+    }
+
+    lastIndex = index + fullMatch.length;
+  }
+
+  if (lastIndex < text.length) {
+    result += escapeHtml(text.slice(lastIndex));
+  }
+
+  while (stack.length > 0) {
+    stack.pop();
+    result += "</span>";
+  }
+
+  return result;
+}
+
+function wrapWithSizeTokens(content: string, size: number): string {
+  const normalized = clampFontSize(size);
+  if (!normalized) return content;
+  return `{{size:${normalized}}}${content}{{/size}}`;
+}
+
+function detectFontSizeValue(element: HTMLElement): number | null {
+  const dataAttr = element.getAttribute("data-font-size");
+  if (dataAttr && /^\d{1,3}$/.test(dataAttr)) {
+    const parsed = clampFontSize(Number(dataAttr));
+    if (parsed) return parsed;
+  }
+
+  const inlineSize = element.style?.fontSize;
+  if (inlineSize) {
+    const parsed = clampFontSize(parseFloat(inlineSize));
+    if (parsed) return parsed;
+  }
+
+  const attrStyle = element.getAttribute("style") ?? "";
+  if (attrStyle) {
+    const match = attrStyle.match(/font-size\s*:\s*([0-9.]+)\s*px/i);
+    if (match) {
+      const parsed = clampFontSize(Number(match[1]));
+      if (parsed) return parsed;
+    }
+  }
+
+  return null;
+}
+
 export function convertTextToHtml(value: string): string {
   const lines = value.split(/\r?\n/);
   const blocks: string[] = [];
@@ -46,7 +143,9 @@ export function convertTextToHtml(value: string): string {
   const flushList = () => {
     if (!currentList) return;
     const tag = currentList.type;
-    const items = currentList.items.map((item) => `<li>${item}</li>`).join("");
+    const items = currentList.items
+      .map((item) => `<li>${renderInlineWithSizeTokens(item)}</li>`)
+      .join("");
     blocks.push(`<${tag}>${items}</${tag}>`);
     currentList = null;
   };
@@ -56,7 +155,7 @@ export function convertTextToHtml(value: string): string {
     const paragraphs = currentBlockquote
       .join("\n")
       .split(/\n{2,}/)
-      .map((para) => `<p>${escapeHtml(para.trim())}</p>`)
+      .map((para) => `<p>${renderInlineWithSizeTokens(para.trim())}</p>`)
       .join("");
     blocks.push(`<blockquote>${paragraphs}</blockquote>`);
     currentBlockquote = [];
@@ -68,7 +167,7 @@ export function convertTextToHtml(value: string): string {
     const paragraphs = content
       ? content
           .split(/\n{2,}/)
-          .map((para) => `<p>${escapeHtml(para.trim())}</p>`)
+          .map((para) => `<p>${renderInlineWithSizeTokens(para.trim())}</p>`)
           .join("")
       : "";
     const typeAttr = escapeAttribute(currentCallout.type || "info");
@@ -77,7 +176,7 @@ export function convertTextToHtml(value: string): string {
   };
 
   const pushParagraph = (text: string) => {
-    blocks.push(`<p>${escapeHtml(text)}</p>`);
+    blocks.push(`<p>${renderInlineWithSizeTokens(text)}</p>`);
   };
 
   lines.forEach((lineRaw) => {
@@ -136,7 +235,7 @@ export function convertTextToHtml(value: string): string {
     if (HEADING_LEVEL_3_REGEX.test(trimmed)) {
       flushList();
       blocks.push(
-        `<h3>${escapeHtml(trimmed.replace(HEADING_LEVEL_3_REGEX, "").trim())}</h3>`
+        `<h3>${renderInlineWithSizeTokens(trimmed.replace(HEADING_LEVEL_3_REGEX, "").trim())}</h3>`
       );
       return;
     }
@@ -144,13 +243,13 @@ export function convertTextToHtml(value: string): string {
     if (HEADING_LEVEL_2_REGEX.test(trimmed)) {
       flushList();
       blocks.push(
-        `<h2>${escapeHtml(trimmed.replace(HEADING_LEVEL_2_REGEX, "").trim())}</h2>`
+        `<h2>${renderInlineWithSizeTokens(trimmed.replace(HEADING_LEVEL_2_REGEX, "").trim())}</h2>`
       );
       return;
     }
 
     if (UNORDERED_LIST_REGEX.test(trimmed)) {
-      const content = escapeHtml(trimmed.replace(UNORDERED_LIST_REGEX, "").trim());
+      const content = trimmed.replace(UNORDERED_LIST_REGEX, "").trim();
       if (!currentList || currentList.type !== "ul") {
         flushList();
         currentList = { type: "ul", items: [] };
@@ -160,7 +259,7 @@ export function convertTextToHtml(value: string): string {
     }
 
     if (ORDERED_LIST_REGEX.test(trimmed)) {
-      const content = escapeHtml(trimmed.replace(ORDERED_LIST_REGEX, "").trim());
+      const content = trimmed.replace(ORDERED_LIST_REGEX, "").trim();
       if (!currentList || currentList.type !== "ol") {
         flushList();
         currentList = { type: "ol", items: [] };
@@ -197,15 +296,26 @@ function collectInlineText(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) {
     return (node.textContent ?? "").replace(/\u00a0/g, " ");
   }
+
   if (node.nodeType !== Node.ELEMENT_NODE) {
     return "";
   }
+
   const element = node as HTMLElement;
   const tag = element.tagName.toLowerCase();
+
   if (tag === "br") {
     return "\n";
   }
-  return Array.from(element.childNodes).map(collectInlineText).join("");
+
+  const inner = Array.from(element.childNodes).map(collectInlineText).join("");
+  const fontSize = tag === "span" ? detectFontSizeValue(element) : null;
+
+  if (fontSize) {
+    return wrapWithSizeTokens(inner, fontSize);
+  }
+
+  return inner;
 }
 
 function normalizeInlineText(text: string): string {
@@ -261,35 +371,36 @@ function nodeToBlocks(node: Node): string[] {
     return [];
   }
 
-  const tag = node.tagName.toLowerCase();
+  const element = node as HTMLElement;
+  const tag = element.tagName.toLowerCase();
 
   switch (tag) {
     case "p": {
-      const text = extractParagraphText(node);
+      const text = extractParagraphText(element);
       return text ? [text] : [];
     }
     case "h1": {
-      const text = extractParagraphText(node);
+      const text = extractParagraphText(element);
       return text ? [`# ${text}`] : [];
     }
     case "h2": {
-      const text = extractParagraphText(node);
+      const text = extractParagraphText(element);
       return text ? [`## ${text}`] : [];
     }
     case "h3": {
-      const text = extractParagraphText(node);
+      const text = extractParagraphText(element);
       return text ? [`### ${text}`] : [];
     }
     case "ul": {
-      const items = convertListNode(node, false);
+      const items = convertListNode(element, false);
       return items.length ? [items.join("\n")] : [];
     }
     case "ol": {
-      const items = convertListNode(node, true);
+      const items = convertListNode(element, true);
       return items.length ? [items.join("\n")] : [];
     }
     case "blockquote": {
-      const raw = collectInlineText(node)
+      const raw = collectInlineText(element)
         .split(/\n{2,}/)
         .map((segment) => segment.trim())
         .filter(Boolean);
@@ -305,10 +416,10 @@ function nodeToBlocks(node: Node): string[] {
     case "hr":
       return ["---"];
     case "div": {
-      const calloutType = detectCalloutType(node);
+      const calloutType = detectCalloutType(element);
       if (calloutType) {
         const innerBlocks: string[] = [];
-        Array.from(node.childNodes).forEach((child) => {
+        Array.from(element.childNodes).forEach((child) => {
           innerBlocks.push(...nodeToBlocks(child));
         });
         const trimmedBlocks = innerBlocks.filter((block) => block.trim().length > 0);
@@ -321,25 +432,32 @@ function nodeToBlocks(node: Node): string[] {
         return [lines.join("\n")];
       }
       const collected: string[] = [];
-      Array.from(node.childNodes).forEach((child) => {
+      Array.from(element.childNodes).forEach((child) => {
         collected.push(...nodeToBlocks(child));
       });
       return collected;
     }
     case "br":
       return [];
-    case "span":
+    case "span": {
+      const content = collectInlineText(element);
+      return content ? [content] : [];
+    }
     case "strong":
     case "em":
     case "u":
     case "del":
-    case "s": {
-      const text = extractParagraphText(node);
-      return text ? [text] : [];
+    case "s":
+    case "a": {
+      const collected: string[] = [];
+      Array.from(element.childNodes).forEach((child) => {
+        collected.push(...nodeToBlocks(child));
+      });
+      return collected;
     }
     default: {
       const collected: string[] = [];
-      Array.from(node.childNodes).forEach((child) => {
+      Array.from(element.childNodes).forEach((child) => {
         collected.push(...nodeToBlocks(child));
       });
       return collected;
@@ -414,6 +532,15 @@ function filterStyleAttribute(element: HTMLElement) {
         return `${property}: ${normalized}`;
       }
 
+      if (property === "font-size") {
+        const match = value.match(/([0-9.]+)/);
+        if (!match) return null;
+        const normalized = clampFontSize(Number(match[1]));
+        if (!normalized) return null;
+        element.setAttribute("data-font-size", String(normalized));
+        return `${property}: ${normalized}px`;
+      }
+
       return `${property}: ${value}`;
     })
     .filter(Boolean)
@@ -429,8 +556,12 @@ function filterStyleAttribute(element: HTMLElement) {
 function convertFontTag(fontEl: HTMLElement) {
   const span = fontEl.ownerDocument.createElement("span");
   const sizeAttr = fontEl.getAttribute("size") ?? "";
-  const mapped = FONT_SIZE_MAP[sizeAttr] ?? DEFAULT_FONT_SIZE_PX;
+  const mapped =
+    FONT_SIZE_MAP[sizeAttr] ??
+    clampFontSize(parseInt(sizeAttr, 10)) ??
+    DEFAULT_FONT_SIZE_PX;
   span.style.fontSize = `${mapped}px`;
+  span.setAttribute("data-font-size", String(mapped));
   span.innerHTML = fontEl.innerHTML;
   fontEl.replaceWith(span);
   return span;
@@ -494,6 +625,18 @@ export function sanitizeHtml(html: string): string {
     Array.from(element.attributes).forEach((attr) => {
       const name = attr.name.toLowerCase();
       if (name === "style") return;
+
+      if (normalizedTag === "span" && name === "data-font-size") {
+        const value = element.getAttribute("data-font-size") ?? "";
+        const numeric = clampFontSize(Number(value));
+        if (!numeric) {
+          element.removeAttribute("data-font-size");
+          return;
+        }
+        element.setAttribute("data-font-size", String(numeric));
+        element.style.fontSize = `${numeric}px`;
+        return;
+      }
 
       if (normalizedTag === "a") {
         if (name === "href") {

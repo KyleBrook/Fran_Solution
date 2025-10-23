@@ -189,6 +189,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       const span = document.createElement("span");
       span.style.fontSize = `${size}px`;
+      span.setAttribute("data-font-size", size.toString());
       span.appendChild(range.extractContents());
       range.insertNode(span);
 
