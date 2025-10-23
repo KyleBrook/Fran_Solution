@@ -42,6 +42,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const editorRef = React.useRef<HTMLDivElement | null>(null);
   const lastValueRef = React.useRef<string>(value);
+  const selectionRef = React.useRef<Range | null>(null);
+
   const [showToolbar, setShowToolbar] = React.useState(false);
   const [toolbarPos, setToolbarPos] = React.useState({ x: 0, y: 0 });
   const [formats, setFormats] = React.useState<FormatState>(DEFAULT_FORMAT_STATE);
@@ -98,6 +100,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
       setShowToolbar(false);
+      selectionRef.current = null;
       return;
     }
 
@@ -105,24 +108,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const editor = editorRef.current;
     if (!editor) {
       setShowToolbar(false);
+      selectionRef.current = null;
       return;
     }
 
-    if (
-      selection.isCollapsed ||
-      !editor.contains(range.commonAncestorContainer)
-    ) {
+    if (selection.isCollapsed || !editor.contains(range.commonAncestorContainer)) {
       setShowToolbar(false);
       setFormats(DEFAULT_FORMAT_STATE);
+      selectionRef.current = null;
       return;
     }
 
     const rect = range.getBoundingClientRect();
     if (!rect || (rect.width === 0 && rect.height === 0)) {
       setShowToolbar(false);
+      selectionRef.current = null;
       return;
     }
 
+    selectionRef.current = range.cloneRange();
     setToolbarPos({
       x: rect.left + rect.width / 2,
       y: rect.top,
@@ -157,6 +161,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, []);
 
+  const restoreSelection = React.useCallback(() => {
+    if (typeof window === "undefined") return false;
+    const selection = window.getSelection();
+    const savedRange = selectionRef.current;
+    if (!selection || !savedRange) return false;
+    selection.removeAllRanges();
+    selection.addRange(savedRange);
+    return true;
+  }, []);
+
   const handleInput = React.useCallback(() => {
     if (!editorRef.current) return;
     const rawHtml = editorRef.current.innerHTML;
@@ -172,17 +186,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const applyCommand = React.useCallback(
     (command: string, value?: string) => {
       if (typeof document === "undefined") return;
+      editorRef.current?.focus();
+      restoreSelection();
       document.execCommand(command, false, value);
       handleInput();
       requestAnimationFrame(updateToolbar);
     },
-    [handleInput, updateToolbar],
+    [handleInput, restoreSelection, updateToolbar],
   );
 
   const applyFontSize = React.useCallback(
     (size: number) => {
       if (typeof window === "undefined") return;
       const selection = window.getSelection();
+      editorRef.current?.focus();
+      restoreSelection();
       if (!selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
       if (range.collapsed) return;
@@ -201,7 +219,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       handleInput();
       requestAnimationFrame(updateToolbar);
     },
-    [handleInput, updateToolbar],
+    [handleInput, restoreSelection, updateToolbar],
   );
 
   const handlePaste = React.useCallback((event: React.ClipboardEvent<HTMLDivElement>) => {
