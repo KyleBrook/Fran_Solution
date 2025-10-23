@@ -96,8 +96,7 @@ const Dashboard: React.FC = () => {
     navigate(`/checkout?plan=${plan}&currency=${currency}`);
   };
 
-  // Admin: adicionar e-mail à whitelist
-  const [whitelistEmail, setWhitelistEmail] = React.useState("francielliaguiar@gmail.com");
+  const [whitelistEmail, setWhitelistEmail] = React.useState("email@adicione-aqui.com.br");
   const handleAddToWhitelist = async () => {
     const email = (whitelistEmail || "").trim();
     if (!email) {
