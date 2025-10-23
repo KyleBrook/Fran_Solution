@@ -411,6 +411,11 @@ export default function CreatePDF() {
                 placeholder="Adicione instruções extras para a IA refinar seu texto"
                 disabled={!aiEnabled}
               />
+              <div className="mt-2 flex justify-end">
+                <Button onClick={handleGenerateWithAI} disabled={loadingAI || !aiEnabled}>
+                  {aiEnabled ? (loadingAI ? "Gerando IA…" : "Gerar com IA") : "IA indisponível"}
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-4">
@@ -609,9 +614,6 @@ export default function CreatePDF() {
 
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
               <Button onClick={handleGenerate}>Atualizar prévia</Button>
-              <Button onClick={handleGenerateWithAI} disabled={loadingAI || !aiEnabled}>
-                {aiEnabled ? (loadingAI ? "Gerando IA…" : "Gerar com IA") : "IA indisponível"}
-              </Button>
               <Button variant="outline" onClick={handlePrint}>
                 Imprimir
               </Button>
