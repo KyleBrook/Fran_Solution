@@ -1,6 +1,5 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
 import { sanitizeHtml } from "@/utils/rich-text";
 
 type FontSizeSettings = {
@@ -29,7 +28,7 @@ type FormatState = {
 
 const FONT_SIZE_OPTIONS = [16, 18, 20, 22, 24, 26];
 
-const DEFAULT_FORMAT_STATE: FormatState = {
+const DEFAULT_STATE: FormatState = {
   bold: false,
   italic: false,
   underline: false,
@@ -38,93 +37,83 @@ const DEFAULT_FORMAT_STATE: FormatState = {
   fontSize: null,
 };
 
-function getPlainText(html: string): string {
-  if (!html) return "";
-  if (typeof window === "undefined") {
-    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  }
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  return (div.textContent || "").replace(/\s+/g, " ").trim();
-}
+let globalStylesInjected = false;
 
-let richTextEditorStylesInjected = false;
+const ensureGlobalStyles = () => {
+  if (globalStylesInjected || typeof document === "undefined") return;
 
-function ensureEditorGlobalStyles() {
-  if (richTextEditorStylesInjected || typeof document === "undefined") {
-    return;
-  }
-
-  const styleEl = document.createElement("style");
-  styleEl.setAttribute("data-rich-text-editor-styles", "true");
-  styleEl.textContent = `
+  const style = document.createElement("style");
+  style.setAttribute("data-rich-text-editor", "true");
+  style.textContent = `
     [data-rich-text-editor] {
       font-size: var(--rte-body-size, 20px);
       line-height: var(--rte-body-line-height, 1.65);
     }
-
     [data-rich-text-editor] p,
-    [data-rich-text-editor] div,
     [data-rich-text-editor] li,
+    [data-rich-text-editor] div,
     [data-rich-text-editor] blockquote {
       font-size: inherit;
       line-height: inherit;
     }
-
     [data-rich-text-editor] blockquote {
-      border-left-width: 4px;
-      border-left-style: solid;
+      border-left: 4px solid rgba(15, 23, 42, 0.15);
+      padding-left: 1rem;
+      margin: 0.75rem 0;
+      font-style: italic;
     }
-
     [data-rich-text-editor] h1 {
       font-size: var(--rte-h1-size, 40px);
       line-height: var(--rte-heading-line-height, 1.2);
     }
-
     [data-rich-text-editor] h2 {
       font-size: var(--rte-h2-size, 28px);
       line-height: var(--rte-heading-line-height, 1.25);
     }
-
     [data-rich-text-editor] h3 {
       font-size: var(--rte-h3-size, 24px);
       line-height: var(--rte-heading-line-height, 1.3);
     }
-
     [data-rich-text-editor] ul,
     [data-rich-text-editor] ol {
       padding-left: 1.5rem;
-      margin: 0.5rem 0;
+      margin: 0.75rem 0;
     }
-
     [data-rich-text-editor] li + li {
       margin-top: 0.25rem;
     }
   `;
-  document.head.appendChild(styleEl);
-  richTextEditorStylesInjected = true;
-}
+  document.head.appendChild(style);
+  globalStylesInjected = true;
+};
+
+const getPlainText = (html: string) => {
+  if (!html) return "";
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return (div.textContent || "").replace(/\s+/g, " ").trim();
+};
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = "Escreva ou cole seu conteúdo. Selecione trechos para formatar.",
+  placeholder = "Digite ou cole seu conteúdo aqui.",
   className,
   fontSizes,
 }) => {
   const editorRef = React.useRef<HTMLDivElement | null>(null);
-  const lastValueRef = React.useRef<string>("");
   const selectionRef = React.useRef<Range | null>(null);
+  const lastValueRef = React.useRef<string>("");
 
   const [showToolbar, setShowToolbar] = React.useState(false);
-  const [toolbarPos, setToolbarPos] = React.useState({ x: 0, y: 0 });
-  const [formats, setFormats] = React.useState<FormatState>(DEFAULT_FORMAT_STATE);
+  const [toolbarPosition, setToolbarPosition] = React.useState({ x: 0, y: 0 });
+  const [formatState, setFormatState] = React.useState<FormatState>(DEFAULT_STATE);
 
   React.useEffect(() => {
-    ensureEditorGlobalStyles();
+    ensureGlobalStyles();
   }, []);
 
-  const computedFontSizes = React.useMemo(
+  const computedSizes = React.useMemo(
     () => ({
       body: fontSizes?.body ?? 20,
       h1: fontSizes?.h1 ?? 40,
@@ -134,141 +123,105 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     [fontSizes],
   );
 
-  const editorCssVars = React.useMemo<React.CSSProperties>(() => {
+  const cssVars = React.useMemo<React.CSSProperties>(() => {
     const vars: React.CSSProperties = {};
-    (vars as any)["--rte-body-size"] = `${computedFontSizes.body}px`;
-    (vars as any)["--rte-h1-size"] = `${computedFontSizes.h1}px`;
-    (vars as any)["--rte-h2-size"] = `${computedFontSizes.h2}px`;
-    (vars as any)["--rte-h3-size"] = `${computedFontSizes.h3}px`;
+    (vars as any)["--rte-body-size"] = `${computedSizes.body}px`;
+    (vars as any)["--rte-h1-size"] = `${computedSizes.h1}px`;
+    (vars as any)["--rte-h2-size"] = `${computedSizes.h2}px`;
+    (vars as any)["--rte-h3-size"] = `${computedSizes.h3}px`;
     (vars as any)["--rte-body-line-height"] = "1.65";
     (vars as any)["--rte-heading-line-height"] = "1.2";
     return vars;
-  }, [computedFontSizes]);
+  }, [computedSizes]);
 
   const sanitizedValue = React.useMemo(() => sanitizeHtml(value || ""), [value]);
 
   React.useEffect(() => {
-    if (!editorRef.current) return;
-    if (editorRef.current.innerHTML !== sanitizedValue) {
-      editorRef.current.innerHTML = sanitizedValue;
+    const editor = editorRef.current;
+    if (!editor) return;
+    if (editor.innerHTML !== sanitizedValue) {
+      editor.innerHTML = sanitizedValue;
     }
     lastValueRef.current = sanitizedValue;
   }, [sanitizedValue]);
 
-  const getCurrentFontSize = React.useCallback((): number | null => {
-    if (typeof window === "undefined") return null;
+  const restoreSelection = React.useCallback(() => {
+    if (typeof window === "undefined") return false;
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return null;
-    const range = selection.getRangeAt(0);
-    let node: Node | null = range.startContainer;
-
-    if (!editorRef.current || !editorRef.current.contains(node)) return null;
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      node = node.parentNode;
+    const saved = selectionRef.current;
+    if (!selection || !saved) return false;
+    selection.removeAllRanges();
+    try {
+      selection.addRange(saved);
+      return true;
+    } catch {
+      return false;
     }
-
-    while (node && node !== editorRef.current) {
-      if (node instanceof HTMLElement) {
-        const size = parseFloat(window.getComputedStyle(node).fontSize);
-        if (!Number.isNaN(size)) {
-          return Math.round(size);
-        }
-      }
-      node = node?.parentNode ?? null;
-    }
-
-    if (editorRef.current) {
-      const size = parseFloat(window.getComputedStyle(editorRef.current).fontSize);
-      if (!Number.isNaN(size)) {
-        return Math.round(size);
-      }
-    }
-
-    return null;
   }, []);
 
   const updateToolbar = React.useCallback(() => {
     if (typeof window === "undefined") return;
+
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
       setShowToolbar(false);
       selectionRef.current = null;
-      setFormats(DEFAULT_FORMAT_STATE);
+      setFormatState(DEFAULT_STATE);
       return;
     }
 
     const range = selection.getRangeAt(0);
     const editor = editorRef.current;
-    if (!editor) {
+    if (!editor || !editor.contains(range.commonAncestorContainer) || selection.isCollapsed) {
       setShowToolbar(false);
       selectionRef.current = null;
-      setFormats(DEFAULT_FORMAT_STATE);
-      return;
-    }
-
-    if (selection.isCollapsed || !editor.contains(range.commonAncestorContainer)) {
-      setShowToolbar(false);
-      selectionRef.current = null;
-      setFormats(DEFAULT_FORMAT_STATE);
+      setFormatState(DEFAULT_STATE);
       return;
     }
 
     const rect = range.getBoundingClientRect();
-    if (!rect || (rect.width === 0 && rect.height === 0)) {
+    if (!rect || (rect.height === 0 && rect.width === 0)) {
       setShowToolbar(false);
       selectionRef.current = null;
-      setFormats(DEFAULT_FORMAT_STATE);
+      setFormatState(DEFAULT_STATE);
       return;
     }
 
     selectionRef.current = range.cloneRange();
-    setToolbarPos({
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-    });
+    setToolbarPosition({ x: rect.left + rect.width / 2, y: rect.top });
 
-    setFormats({
+    setFormatState({
       bold: document.queryCommandState("bold"),
       italic: document.queryCommandState("italic"),
       underline: document.queryCommandState("underline"),
       orderedList: document.queryCommandState("insertOrderedList"),
       unorderedList: document.queryCommandState("insertUnorderedList"),
-      fontSize: getCurrentFontSize(),
+      fontSize: (() => {
+        const selectionNode = range.startContainer.parentElement;
+        if (!selectionNode) return null;
+        const computed = window.getComputedStyle(selectionNode).fontSize;
+        const parsed = parseFloat(computed);
+        return Number.isFinite(parsed) ? Math.round(parsed) : null;
+      })(),
     });
+
     setShowToolbar(true);
-  }, [getCurrentFontSize]);
+  }, []);
 
   React.useEffect(() => {
     const handleSelectionChange = () => updateToolbar();
     document.addEventListener("selectionchange", handleSelectionChange);
-    return () => {
-      document.removeEventListener("selectionchange", handleSelectionChange);
-    };
+    return () => document.removeEventListener("selectionchange", handleSelectionChange);
   }, [updateToolbar]);
 
   React.useEffect(() => {
-    const handleScroll = () => setShowToolbar(false);
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleScroll);
+    const hideToolbar = () => setShowToolbar(false);
+    window.addEventListener("scroll", hideToolbar, true);
+    window.addEventListener("resize", hideToolbar);
     return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("scroll", hideToolbar, true);
+      window.removeEventListener("resize", hideToolbar);
     };
-  }, []);
-
-  const restoreSelection = React.useCallback(() => {
-    if (typeof window === "undefined") return false;
-    const selection = window.getSelection();
-    const savedRange = selectionRef.current;
-    if (!selection || !savedRange) return false;
-    selection.removeAllRanges();
-    try {
-      selection.addRange(savedRange);
-    } catch {
-      return false;
-    }
-    return true;
   }, []);
 
   const handleInput = React.useCallback(() => {
@@ -284,14 +237,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       onChange(clean);
     }
     requestAnimationFrame(updateToolbar);
-  }, [onChange, updateToolbar, restoreSelection]);
+  }, [onChange, restoreSelection, updateToolbar]);
 
   const applyCommand = React.useCallback(
-    (command: string, value?: string) => {
-      if (typeof document === "undefined") return;
-      editorRef.current?.focus();
-      restoreSelection();
-      document.execCommand(command, false, value);
+    (command: string, valueArg?: string) => {
+      const editor = editorRef.current;
+      if (!editor) return;
+      editor.focus();
+      if (!restoreSelection()) return;
+      document.execCommand(command, false, valueArg);
       handleInput();
     },
     [handleInput, restoreSelection],
@@ -299,17 +253,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   const applyFontSize = React.useCallback(
     (size: number) => {
-      if (typeof window === "undefined") return;
+      const editor = editorRef.current;
+      if (!editor || !restoreSelection()) return;
+
       const selection = window.getSelection();
-      editorRef.current?.focus();
-      const restored = restoreSelection();
-      if (!restored || !selection || selection.rangeCount === 0) return;
+      if (!selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
       if (range.collapsed) return;
 
       const span = document.createElement("span");
       span.style.fontSize = `${size}px`;
-      span.setAttribute("data-font-size", size.toString());
+      span.setAttribute("data-font-size", String(size));
       span.appendChild(range.extractContents());
       range.insertNode(span);
 
@@ -326,18 +280,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handlePaste = React.useCallback(
     (event: React.ClipboardEvent<HTMLDivElement>) => {
       event.preventDefault();
-      const html = event.clipboardData.getData("text/html");
-      const text = event.clipboardData.getData("text/plain");
-      editorRef.current?.focus();
+      const htmlData = event.clipboardData.getData("text/html");
+      const textData = event.clipboardData.getData("text/plain");
+      const editor = editorRef.current;
+      if (!editor) return;
+      editor.focus();
       restoreSelection();
 
-      if (html) {
-        const clean = sanitizeHtml(html);
+      if (htmlData) {
+        const clean = sanitizeHtml(htmlData);
         document.execCommand("insertHTML", false, clean);
-      } else {
-        document.execCommand("insertText", false, text);
+      } else if (textData) {
+        document.execCommand("insertText", false, textData);
       }
-
       handleInput();
     },
     [handleInput, restoreSelection],
@@ -346,44 +301,40 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const isEmpty = React.useMemo(() => getPlainText(sanitizedValue).length === 0, [sanitizedValue]);
 
   return (
-    <div className={cn("relative", className)}>
-      {isEmpty && (
-        <div className="pointer-events-none absolute inset-0 px-3 py-2 text-sm text-muted-foreground">
-          {placeholder}
-        </div>
-      )}
-      <div
-        ref={editorRef}
-        role="textbox"
-        aria-label="Editor de texto rico"
-        contentEditable
-        suppressContentEditableWarning
-        spellCheck
-        data-placeholder={placeholder}
-        data-rich-text-editor="true"
-        lang="pt-BR"
-        className={cn(
-          "min-h-[240px] w-full rounded-md border bg-white px-3 py-2 text-base leading-relaxed shadow-sm outline-none transition",
-          "focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
-          "prose prose-sm max-w-none whitespace-pre-wrap break-words hyphens-auto",
+    <div className={className}>
+      <div className="relative">
+        {isEmpty && (
+          <div className="pointer-events-none absolute inset-0 px-3 py-2 text-sm text-muted-foreground">
+            {placeholder}
+          </div>
         )}
-        style={editorCssVars}
-        onInput={handleInput}
-        onPaste={handlePaste}
-        onKeyUp={updateToolbar}
-        onMouseUp={updateToolbar}
-        onBlur={() => {
-          setShowToolbar(false);
-        }}
-        onFocus={() => requestAnimationFrame(updateToolbar)}
-      />
+        <div
+          ref={editorRef}
+          role="textbox"
+          aria-label="Editor de texto"
+          contentEditable
+          suppressContentEditableWarning
+          spellCheck
+          data-rich-text-editor="true"
+          className="min-h-[220px] w-full rounded-md border bg-white px-3 py-2 text-base leading-relaxed shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+          style={cssVars}
+          onInput={handleInput}
+          onPaste={handlePaste}
+          onKeyUp={updateToolbar}
+          onMouseUp={updateToolbar}
+          onBlur={() => setShowToolbar(false)}
+          onFocus={() => requestAnimationFrame(updateToolbar)}
+        />
+      </div>
+
       {showToolbar &&
+        typeof document !== "undefined" &&
         createPortal(
           <div
             className="fixed z-50"
             style={{
-              top: toolbarPos.y,
-              left: toolbarPos.x,
+              top: toolbarPosition.y,
+              left: toolbarPosition.x,
               transform: "translate(-50%, calc(-100% - 12px))",
             }}
           >
@@ -392,12 +343,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => applyCommand("bold")}
-                className={cn(
-                  "rounded-sm px-2 py-1 text-xs font-semibold transition",
-                  formats.bold
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted hover:text-foreground",
-                )}
+                className={`rounded-sm px-2 py-1 text-xs font-semibold transition ${
+                  formatState.bold ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
               >
                 N
               </button>
@@ -405,12 +353,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => applyCommand("italic")}
-                className={cn(
-                  "rounded-sm px-2 py-1 text-xs font-semibold italic transition",
-                  formats.italic
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted hover:text-foreground",
-                )}
+                className={`rounded-sm px-2 py-1 text-xs font-semibold italic transition ${
+                  formatState.italic ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
               >
                 /
               </button>
@@ -418,28 +363,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => applyCommand("underline")}
-                className={cn(
-                  "rounded-sm px-2 py-1 text-xs font-semibold underline transition",
-                  formats.underline
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted hover:text-foreground",
-                )}
+                className={`rounded-sm px-2 py-1 text-xs font-semibold underline transition ${
+                  formatState.underline ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
               >
                 S
               </button>
 
-              <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+              <span className="mx-1 h-5 w-px bg-border" />
 
               <button
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => applyCommand("insertUnorderedList")}
-                className={cn(
-                  "rounded-sm px-2 py-1 text-xs font-medium transition",
-                  formats.unorderedList
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted hover:text-foreground",
-                )}
+                className={`rounded-sm px-2 py-1 text-xs transition ${
+                  formatState.unorderedList ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
               >
                 Lista
               </button>
@@ -447,31 +386,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => applyCommand("insertOrderedList")}
-                className={cn(
-                  "rounded-sm px-2 py-1 text-xs font-medium transition",
-                  formats.orderedList
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted hover:text-foreground",
-                )}
+                className={`rounded-sm px-2 py-1 text-xs transition ${
+                  formatState.orderedList ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
               >
                 1·2·3
               </button>
 
-              <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+              <span className="mx-1 h-5 w-px bg-border" />
 
               <label className="flex items-center gap-1 text-[0.7rem] font-semibold">
                 Tamanho
                 <select
                   className="rounded border bg-background px-1 py-0.5 text-xs focus:outline-none"
                   value={
-                    formats.fontSize && FONT_SIZE_OPTIONS.includes(formats.fontSize)
-                      ? formats.fontSize
+                    formatState.fontSize && FONT_SIZE_OPTIONS.includes(formatState.fontSize)
+                      ? formatState.fontSize
                       : ""
                   }
                   onChange={(event) => {
-                    const size = Number(event.target.value);
-                    if (Number.isFinite(size)) {
-                      applyFontSize(size);
+                    const selected = Number(event.target.value);
+                    if (Number.isFinite(selected)) {
+                      applyFontSize(selected);
                     }
                   }}
                 >
