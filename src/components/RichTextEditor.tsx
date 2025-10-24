@@ -1,11 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
-import {
-  convertTextToHtml,
-  convertHtmlToText,
-  sanitizeHtml,
-} from "@/utils/rich-text";
+import { sanitizeHtml } from "@/utils/rich-text";
 
 type RichTextEditorProps = {
   value: string;
@@ -34,6 +30,16 @@ const DEFAULT_FORMAT_STATE: FormatState = {
   fontSize: null,
 };
 
+function getPlainText(html: string): string {
+  if (!html) return "";
+  if (typeof window === "undefined") {
+    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  }
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return (div.textContent || "").replace(/\s+/g, " ").trim();
+}
+
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
@@ -41,26 +47,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   className,
 }) => {
   const editorRef = React.useRef<HTMLDivElement | null>(null);
-  const lastValueRef = React.useRef<string>(value);
+  const lastValueRef = React.useRef<string>("");
   const selectionRef = React.useRef<Range | null>(null);
 
   const [showToolbar, setShowToolbar] = React.useState(false);
   const [toolbarPos, setToolbarPos] = React.useState({ x: 0, y: 0 });
   const [formats, setFormats] = React.useState<FormatState>(DEFAULT_FORMAT_STATE);
 
-  React.useEffect(() => {
-    if (!editorRef.current) return;
-    const initialHtml = convertTextToHtml(value);
-    editorRef.current.innerHTML = initialHtml || "";
-  }, []);
+  const sanitizedValue = React.useMemo(() => sanitizeHtml(value || ""), [value]);
 
   React.useEffect(() => {
-    if (value === lastValueRef.current) return;
     if (!editorRef.current) return;
-    const html = convertTextToHtml(value);
-    lastValueRef.current = value;
-    editorRef.current.innerHTML = html || "";
-  }, [value]);
+    if (editorRef.current.innerHTML !== sanitizedValue) {
+      editorRef.current.innerHTML = sanitizedValue;
+    }
+    lastValueRef.current = sanitizedValue;
+  }, [sanitizedValue]);
 
   const getCurrentFontSize = React.useCallback((): number | null => {
     if (typeof window === "undefined") return null;
@@ -101,6 +103,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!selection || selection.rangeCount === 0) {
       setShowToolbar(false);
       selectionRef.current = null;
+      setFormats(DEFAULT_FORMAT_STATE);
       return;
     }
 
@@ -109,13 +112,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!editor) {
       setShowToolbar(false);
       selectionRef.current = null;
+      setFormats(DEFAULT_FORMAT_STATE);
       return;
     }
 
     if (selection.isCollapsed || !editor.contains(range.commonAncestorContainer)) {
       setShowToolbar(false);
-      setFormats(DEFAULT_FORMAT_STATE);
       selectionRef.current = null;
+      setFormats(DEFAULT_FORMAT_STATE);
       return;
     }
 
@@ -123,6 +127,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!rect || (rect.width === 0 && rect.height === 0)) {
       setShowToolbar(false);
       selectionRef.current = null;
+      setFormats(DEFAULT_FORMAT_STATE);
       return;
     }
 
@@ -167,21 +172,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const savedRange = selectionRef.current;
     if (!selection || !savedRange) return false;
     selection.removeAllRanges();
-    selection.addRange(savedRange);
+    try {
+      selection.addRange(savedRange);
+    } catch {
+      return false;
+    }
     return true;
   }, []);
 
   const handleInput = React.useCallback(() => {
     if (!editorRef.current) return;
     const rawHtml = editorRef.current.innerHTML;
-    const sanitized = sanitizeHtml(rawHtml);
-    if (sanitized !== rawHtml) {
-      editorRef.current.innerHTML = sanitized;
+    const clean = sanitizeHtml(rawHtml);
+    if (clean !== rawHtml) {
+      editorRef.current.innerHTML = clean;
+      restoreSelection();
     }
-    const nextValue = convertHtmlToText(sanitized);
-    lastValueRef.current = nextValue;
-    onChange(nextValue);
-  }, [onChange]);
+    if (clean !== lastValueRef.current) {
+      lastValueRef.current = clean;
+      onChange(clean);
+    }
+    requestAnimationFrame(updateToolbar);
+  }, [onChange, updateToolbar, restoreSelection]);
 
   const applyCommand = React.useCallback(
     (command: string, value?: string) => {
@@ -190,9 +202,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       restoreSelection();
       document.execCommand(command, false, value);
       handleInput();
-      requestAnimationFrame(updateToolbar);
     },
-    [handleInput, restoreSelection, updateToolbar],
+    [handleInput, restoreSelection],
   );
 
   const applyFontSize = React.useCallback(
@@ -200,8 +211,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       if (typeof window === "undefined") return;
       const selection = window.getSelection();
       editorRef.current?.focus();
-      restoreSelection();
-      if (!selection || selection.rangeCount === 0) return;
+      const restored = restoreSelection();
+      if (!restored || !selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
       if (range.collapsed) return;
 
@@ -217,19 +228,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       selection.addRange(newRange);
 
       handleInput();
-      requestAnimationFrame(updateToolbar);
     },
-    [handleInput, restoreSelection, updateToolbar],
+    [handleInput, restoreSelection],
   );
 
-  const handlePaste = React.useCallback((event: React.ClipboardEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const text = event.clipboardData.getData("text/plain");
-    document.execCommand("insertText", false, text);
-    handleInput();
-  }, [handleInput]);
+  const handlePaste = React.useCallback(
+    (event: React.ClipboardEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const html = event.clipboardData.getData("text/html");
+      const text = event.clipboardData.getData("text/plain");
+      editorRef.current?.focus();
+      restoreSelection();
 
-  const isEmpty = !value.trim();
+      if (html) {
+        const clean = sanitizeHtml(html);
+        document.execCommand("insertHTML", false, clean);
+      } else {
+        document.execCommand("insertText", false, text);
+      }
+
+      handleInput();
+    },
+    [handleInput, restoreSelection],
+  );
+
+  const isEmpty = React.useMemo(() => getPlainText(sanitizedValue).length === 0, [sanitizedValue]);
 
   return (
     <div className={cn("relative", className)}>
@@ -256,7 +279,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onPaste={handlePaste}
         onKeyUp={updateToolbar}
         onMouseUp={updateToolbar}
-        onBlur={() => setShowToolbar(false)}
+        onBlur={() => {
+          setShowToolbar(false);
+        }}
         onFocus={() => requestAnimationFrame(updateToolbar)}
       />
       {showToolbar &&
@@ -294,7 +319,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     : "hover:bg-muted hover:text-foreground",
                 )}
               >
-                I
+                /
               </button>
               <button
                 type="button"

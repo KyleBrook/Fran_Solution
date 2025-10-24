@@ -45,7 +45,7 @@ function escapeAttribute(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
+    .replace(/</g, "&gt;")
     .replace(/>/g, "&gt;");
 }
 
@@ -589,6 +589,8 @@ export function sanitizeHtml(html: string): string {
     "div",
     "a",
     "del",
+    "b",
+    "i",
   ]);
 
   const cleanNode = (node: Node) => {
