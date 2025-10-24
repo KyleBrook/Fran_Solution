@@ -3,11 +3,19 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { sanitizeHtml } from "@/utils/rich-text";
 
+type FontSizeSettings = {
+  body?: number;
+  h1?: number;
+  h2?: number;
+  h3?: number;
+};
+
 type RichTextEditorProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  fontSizes?: FontSizeSettings;
 };
 
 type FormatState = {
@@ -40,11 +48,69 @@ function getPlainText(html: string): string {
   return (div.textContent || "").replace(/\s+/g, " ").trim();
 }
 
+let richTextEditorStylesInjected = false;
+
+function ensureEditorGlobalStyles() {
+  if (richTextEditorStylesInjected || typeof document === "undefined") {
+    return;
+  }
+
+  const styleEl = document.createElement("style");
+  styleEl.setAttribute("data-rich-text-editor-styles", "true");
+  styleEl.textContent = `
+    [data-rich-text-editor] {
+      font-size: var(--rte-body-size, 20px);
+      line-height: var(--rte-body-line-height, 1.65);
+    }
+
+    [data-rich-text-editor] p,
+    [data-rich-text-editor] div,
+    [data-rich-text-editor] li,
+    [data-rich-text-editor] blockquote {
+      font-size: inherit;
+      line-height: inherit;
+    }
+
+    [data-rich-text-editor] blockquote {
+      border-left-width: 4px;
+      border-left-style: solid;
+    }
+
+    [data-rich-text-editor] h1 {
+      font-size: var(--rte-h1-size, 40px);
+      line-height: var(--rte-heading-line-height, 1.2);
+    }
+
+    [data-rich-text-editor] h2 {
+      font-size: var(--rte-h2-size, 28px);
+      line-height: var(--rte-heading-line-height, 1.25);
+    }
+
+    [data-rich-text-editor] h3 {
+      font-size: var(--rte-h3-size, 24px);
+      line-height: var(--rte-heading-line-height, 1.3);
+    }
+
+    [data-rich-text-editor] ul,
+    [data-rich-text-editor] ol {
+      padding-left: 1.5rem;
+      margin: 0.5rem 0;
+    }
+
+    [data-rich-text-editor] li + li {
+      margin-top: 0.25rem;
+    }
+  `;
+  document.head.appendChild(styleEl);
+  richTextEditorStylesInjected = true;
+}
+
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   placeholder = "Escreva ou cole seu conteúdo. Selecione trechos para formatar.",
   className,
+  fontSizes,
 }) => {
   const editorRef = React.useRef<HTMLDivElement | null>(null);
   const lastValueRef = React.useRef<string>("");
@@ -53,6 +119,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [showToolbar, setShowToolbar] = React.useState(false);
   const [toolbarPos, setToolbarPos] = React.useState({ x: 0, y: 0 });
   const [formats, setFormats] = React.useState<FormatState>(DEFAULT_FORMAT_STATE);
+
+  React.useEffect(() => {
+    ensureEditorGlobalStyles();
+  }, []);
+
+  const computedFontSizes = React.useMemo(
+    () => ({
+      body: fontSizes?.body ?? 20,
+      h1: fontSizes?.h1 ?? 40,
+      h2: fontSizes?.h2 ?? 28,
+      h3: fontSizes?.h3 ?? 24,
+    }),
+    [fontSizes],
+  );
+
+  const editorCssVars = React.useMemo<React.CSSProperties>(() => {
+    const vars: React.CSSProperties = {};
+    (vars as any)["--rte-body-size"] = `${computedFontSizes.body}px`;
+    (vars as any)["--rte-h1-size"] = `${computedFontSizes.h1}px`;
+    (vars as any)["--rte-h2-size"] = `${computedFontSizes.h2}px`;
+    (vars as any)["--rte-h3-size"] = `${computedFontSizes.h3}px`;
+    (vars as any)["--rte-body-line-height"] = "1.65";
+    (vars as any)["--rte-heading-line-height"] = "1.2";
+    return vars;
+  }, [computedFontSizes]);
 
   const sanitizedValue = React.useMemo(() => sanitizeHtml(value || ""), [value]);
 
@@ -269,12 +360,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         suppressContentEditableWarning
         spellCheck
         data-placeholder={placeholder}
+        data-rich-text-editor="true"
         lang="pt-BR"
         className={cn(
           "min-h-[240px] w-full rounded-md border bg-white px-3 py-2 text-base leading-relaxed shadow-sm outline-none transition",
           "focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
           "prose prose-sm max-w-none whitespace-pre-wrap break-words hyphens-auto",
         )}
+        style={editorCssVars}
         onInput={handleInput}
         onPaste={handlePaste}
         onKeyUp={updateToolbar}
