@@ -79,6 +79,14 @@ const ensureGlobalStyles = () => {
       padding-left: 1.5rem;
       margin: 0.75rem 0;
     }
+    [data-rich-text-editor] ul {
+      list-style-type: disc;
+      list-style-position: outside;
+    }
+    [data-rich-text-editor] ol {
+      list-style-type: decimal;
+      list-style-position: outside;
+    }
     [data-rich-text-editor] li + li {
       margin-top: 0.25rem;
     }
