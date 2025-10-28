@@ -104,6 +104,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const editorRef = React.useRef<HTMLDivElement | null>(null);
   const selectionRef = React.useRef<Range | null>(null);
   const lastValueRef = React.useRef<string>("");
+  const skipNextEffectRef = React.useRef(false);
 
   const [showToolbar, setShowToolbar] = React.useState(false);
   const [toolbarPosition, setToolbarPosition] = React.useState({ x: 0, y: 0 });
@@ -139,6 +140,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   React.useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
+
+    if (skipNextEffectRef.current) {
+      skipNextEffectRef.current = false;
+      lastValueRef.current = sanitizedValue;
+      return;
+    }
+
     if (editor.innerHTML !== sanitizedValue) {
       editor.innerHTML = sanitizedValue;
     }
@@ -229,10 +237,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const rawHtml = editorRef.current.innerHTML;
     const clean = sanitizeHtml(rawHtml);
     if (clean !== rawHtml) {
+      skipNextEffectRef.current = true;
       editorRef.current.innerHTML = clean;
       restoreSelection();
     }
     if (clean !== lastValueRef.current) {
+      skipNextEffectRef.current = true;
       lastValueRef.current = clean;
       onChange(clean);
     }
