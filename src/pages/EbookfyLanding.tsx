@@ -7,7 +7,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  CreditCard,
   FileText,
   PenSquare,
   Quote,
@@ -99,11 +98,6 @@ const trustSignals = [
     Icon: ShieldCheck,
     title: "Infraestrutura segura",
     description: "Autenticação e armazenamento via Supabase.",
-  },
-  {
-    Icon: CreditCard,
-    title: "Pagamentos protegidos",
-    description: "Checkouts e billing operados com Stripe.",
   },
   {
     Icon: Sparkles,
@@ -411,7 +405,7 @@ const EbookfyLanding = () => {
       </section>
 
       <footer className="border-t border-white/10 bg-slate-950 py-8">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-6 text-center text-sm text-slate-400 md:flex-row md:text-left">
+        <div className="container mx-auto flex flex-col items-center definitivamente gap-4 px-6 text-center text-sm text-slate-400 md:flex-row md:text-left">
           <p>&copy; {new Date().getFullYear()} EbookFy. Todos os direitos reservados.</p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs uppercase tracking-wide text-slate-400 md:justify-end">
             <span>PDF em segundos</span>
