@@ -48,6 +48,11 @@ const ensureGlobalStyles = () => {
     [data-rich-text-editor] {
       font-size: var(--rte-body-size, 20px);
       line-height: var(--rte-body-line-height, 1.65);
+      writing-mode: horizontal-tb;
+      text-orientation: mixed;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
     [data-rich-text-editor] p,
     [data-rich-text-editor] li,
@@ -142,6 +147,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     (vars as any)["--rte-heading-line-height"] = "1.2";
     return vars;
   }, [computedSizes]);
+
+  const editorStyle = React.useMemo<React.CSSProperties>(
+    () => ({
+      ...cssVars,
+      writingMode: "horizontal-tb",
+      textOrientation: "mixed",
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+      overflowWrap: "break-word",
+    }),
+    [cssVars],
+  );
 
   const sanitizedValue = React.useMemo(() => sanitizeHtml(value || ""), [value]);
 
@@ -335,7 +352,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           spellCheck
           data-rich-text-editor="true"
           className="min-h-[220px] w-full rounded-md border bg-white px-3 py-2 text-base leading-relaxed shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-          style={cssVars}
+          style={editorStyle}
           onInput={handleInput}
           onPaste={handlePaste}
           onKeyUp={updateToolbar}
