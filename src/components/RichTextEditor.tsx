@@ -26,6 +26,11 @@ type FormatState = {
   fontSize: number | null;
 };
 
+type SelectionSnapshot = {
+  start: number;
+  end: number;
+};
+
 const FONT_SIZE_OPTIONS = [16, 18, 20, 22, 24, 26];
 
 const DEFAULT_STATE: FormatState = {
@@ -39,7 +44,7 @@ const DEFAULT_STATE: FormatState = {
 
 let globalStylesInjected = false;
 
-const ensureGlobalStyles = () => {
+function ensureGlobalStyles() {
   if (globalStylesInjected || typeof document === "undefined") return;
 
   const style = document.createElement("style");
@@ -96,14 +101,83 @@ const ensureGlobalStyles = () => {
   `;
   document.head.appendChild(style);
   globalStylesInjected = true;
-};
+}
 
-const getPlainText = (html: string) => {
+function getPlainText(html: string) {
   if (!html) return "";
   const div = document.createElement("div");
   div.innerHTML = html;
   return (div.textContent || "").replace(/\s+/g, " ").trim();
-};
+}
+
+function saveSelectionOffsets(editor: HTMLElement): SelectionSnapshot | null {
+  if (typeof window === "undefined") return null;
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+
+  const range = selection.getRangeAt(0);
+  if (!editor.contains(range.commonAncestorContainer)) return null;
+
+  const preRange = range.cloneRange();
+  preRange.selectNodeContents(editor);
+  preRange.setEnd(range.startContainer, range.startOffset);
+
+  const start = preRange.toString().length;
+  const end = start + range.toString().length;
+
+  return { start, end };
+}
+
+function restoreSelectionOffsets(editor: HTMLElement, snapshot: SelectionSnapshot | null) {
+  if (!snapshot || typeof window === "undefined") return;
+
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  const { start, end } = snapshot;
+  let charIndex = 0;
+  let startNode: Node | null = null;
+  let startOffset = 0;
+  let endNode: Node | null = null;
+  let endOffset = 0;
+
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+  let currentNode = walker.nextNode();
+
+  while (currentNode) {
+    const text = currentNode.textContent || "";
+    const nextCharIndex = charIndex + text.length;
+
+    if (!startNode && start >= charIndex && start <= nextCharIndex) {
+      startNode = currentNode;
+      startOffset = start - charIndex;
+    }
+    if (!endNode && end >= charIndex && end <= nextCharIndex) {
+      endNode = currentNode;
+      endOffset = end - charIndex;
+      break;
+    }
+
+    charIndex = nextCharIndex;
+    currentNode = walker.nextNode();
+  }
+
+  const range = document.createRange();
+  if (startNode) {
+    range.setStart(startNode, Math.min(startOffset, (startNode.textContent || "").length));
+  } else {
+    range.setStart(editor, editor.childNodes.length);
+  }
+
+  if (endNode) {
+    range.setEnd(endNode, Math.min(endOffset, (endNode.textContent || "").length));
+  } else {
+    range.collapse(true);
+  }
+
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
@@ -169,8 +243,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
 
     if (editor.innerHTML !== sanitizedValue) {
+      const shouldPreserveSelection = document.activeElement === editor;
+      const snapshot = shouldPreserveSelection ? saveSelectionOffsets(editor) : null;
+
       editor.innerHTML = sanitizedValue;
+
+      if (shouldPreserveSelection) {
+        restoreSelectionOffsets(editor, snapshot);
+      }
     }
+
     lastValueRef.current = sanitizedValue;
   }, [sanitizedValue]);
 
@@ -178,7 +260,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (typeof window === "undefined") return false;
     const selection = window.getSelection();
     const saved = selectionRef.current;
-    if (!selection || !saved) return false;
+    const editor = editorRef.current;
+
+    if (!selection || !saved || !editor) return false;
+    if (!editor.contains(saved.commonAncestorContainer)) return false;
+
     selection.removeAllRanges();
     try {
       selection.addRange(saved);
@@ -192,7 +278,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (typeof window === "undefined") return;
 
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
+    const editor = editorRef.current;
+
+    if (!selection || selection.rangeCount === 0 || !editor) {
       setShowToolbar(false);
       selectionRef.current = null;
       setFormatState(DEFAULT_STATE);
@@ -200,8 +288,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
 
     const range = selection.getRangeAt(0);
-    const editor = editorRef.current;
-    if (!editor || !editor.contains(range.commonAncestorContainer) || selection.isCollapsed) {
+
+    if (!editor.contains(range.commonAncestorContainer) || selection.isCollapsed) {
       setShowToolbar(false);
       selectionRef.current = null;
       setFormatState(DEFAULT_STATE);
@@ -209,7 +297,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
 
     const rect = range.getBoundingClientRect();
-    if (!rect || (rect.height === 0 && rect.width === 0)) {
+    if (rect.width === 0 && rect.height === 0) {
       setShowToolbar(false);
       selectionRef.current = null;
       setFormatState(DEFAULT_STATE);
@@ -226,9 +314,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       orderedList: document.queryCommandState("insertOrderedList"),
       unorderedList: document.queryCommandState("insertUnorderedList"),
       fontSize: (() => {
-        const selectionNode = range.startContainer.parentElement;
-        if (!selectionNode) return null;
-        const computed = window.getComputedStyle(selectionNode).fontSize;
+        const node = range.startContainer.parentElement;
+        if (!node) return null;
+        const computed = window.getComputedStyle(node).fontSize;
         const parsed = parseFloat(computed);
         return Number.isFinite(parsed) ? Math.round(parsed) : null;
       })(),
@@ -270,8 +358,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     (command: string, valueArg?: string) => {
       const editor = editorRef.current;
       if (!editor) return;
+
       editor.focus();
       if (!restoreSelection()) return;
+
       document.execCommand(command, false, valueArg);
       handleInput();
     },
@@ -285,6 +375,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return;
+
       const range = selection.getRangeAt(0);
       if (range.collapsed) return;
 
@@ -311,6 +402,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const textData = event.clipboardData.getData("text/plain");
       const editor = editorRef.current;
       if (!editor) return;
+
       editor.focus();
       restoreSelection();
 
@@ -345,6 +437,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {placeholder}
           </div>
         )}
+
         <div
           ref={editorRef}
           role="textbox"
