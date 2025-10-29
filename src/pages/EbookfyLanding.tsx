@@ -238,16 +238,16 @@ const EbookfyLanding = () => {
         <div className="grid gap-6 lg:grid-cols-3">
           {workflowSteps.map((step) => (
             <ScrollTiltCard key={step.title} intensity={9} className="rounded-3xl">
-              <Card className="h-full rounded-3xl border-white/10 bg-gradient-to-b from-white/10 to-white/5 text-left backdrop-blur">
+              <Card className="h-full rounded-3xl border-slate-200 bg-white text-left text-slate-800 shadow-xl">
                 <CardHeader className="space-y-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/10">
-                    <step.icon className="h-6 w-6 text-sky-300" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+                    <step.icon className="h-6 w-6 text-sky-500" />
                   </div>
-                  <CardTitle className="text-2xl text-white">{step.title}</CardTitle>
-                  <p className="text-sm text-slate-300">{step.description}</p>
+                  <CardTitle className="text-2xl text-slate-900">{step.title}</CardTitle>
+                  <p className="text-sm text-slate-600">{step.description}</p>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-slate-300">{step.detail}</p>
+                  <p className="text-sm text-slate-600">{step.detail}</p>
                 </CardContent>
               </Card>
             </ScrollTiltCard>
