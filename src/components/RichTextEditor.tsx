@@ -257,18 +257,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!editorRef.current) return;
     const rawHtml = editorRef.current.innerHTML;
     const clean = sanitizeHtml(rawHtml);
-    if (clean !== rawHtml) {
-      skipNextEffectRef.current = true;
-      editorRef.current.innerHTML = clean;
-      restoreSelection();
-    }
+
     if (clean !== lastValueRef.current) {
-      skipNextEffectRef.current = true;
       lastValueRef.current = clean;
       onChange(clean);
     }
+
     requestAnimationFrame(updateToolbar);
-  }, [onChange, restoreSelection, updateToolbar]);
+  }, [onChange, updateToolbar]);
 
   const applyCommand = React.useCallback(
     (command: string, valueArg?: string) => {
@@ -329,6 +325,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     [handleInput, restoreSelection],
   );
 
+  const normalizeEditorContent = React.useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const clean = sanitizeHtml(editor.innerHTML);
+    if (editor.innerHTML !== clean) {
+      skipNextEffectRef.current = true;
+      editor.innerHTML = clean;
+    }
+  }, []);
+
   const isEmpty = React.useMemo(() => getPlainText(sanitizedValue).length === 0, [sanitizedValue]);
 
   return (
@@ -353,7 +359,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onPaste={handlePaste}
           onKeyUp={updateToolbar}
           onMouseUp={updateToolbar}
-          onBlur={() => setShowToolbar(false)}
+          onBlur={() => {
+            setShowToolbar(false);
+            normalizeEditorContent();
+          }}
           onFocus={() => requestAnimationFrame(updateToolbar)}
         />
       </div>
