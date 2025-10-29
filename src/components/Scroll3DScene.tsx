@@ -85,7 +85,7 @@ const Scroll3DScene: React.FC = () => {
             <div className="flex items-center gap-3">
               <span className="h-2 w-2 rounded-full bg-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.8)]" />
               <span className="font-semibold uppercase tracking-[0.3em] text-sky-200/95">
-                Flow 01
+                Ebooks Rápido
               </span>
             </div>
             <p className="text-lg font-medium text-white">
@@ -97,8 +97,8 @@ const Scroll3DScene: React.FC = () => {
             </div>
           </div>
           <div className="absolute inset-x-8 bottom-10 flex items-center justify-between text-xs text-slate-200/80">
-            <span>AI assisted</span>
-            <span>Paginação 3D</span>
+            <span>Assistência com IA</span>
+            <span>Personalizável</span>
           </div>
         </div>
         <div
