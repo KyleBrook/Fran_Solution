@@ -96,9 +96,13 @@ const Scroll3DScene: React.FC = () => {
               <span className="h-10 flex-1 rounded-2xl bg-gradient-to-r from-cyan-400/40 to-transparent delay-75" />
             </div>
           </div>
-          <div className="absolute inset-x-8 bottom-10 flex items-center justify-between text-xs text-slate-200/80">
-            <span>Assistência com IA</span>
-            <span>Personalizável</span>
+          <div className="absolute inset-x-8 bottom-10 flex gap-3 text-xs text-slate-200/85">
+            <div className="flex-1 rounded-full bg-gradient-to-r from-sky-500/20 to-transparent px-4 py-2 text-center font-medium backdrop-blur-sm">
+              Assistência com IA
+            </div>
+            <div className="flex-1 rounded-full bg-gradient-to-r from-white/15 to-transparent px-4 py-2 text-center font-medium backdrop-blur-sm">
+              Personalizável
+            </div>
           </div>
         </div>
         <div
