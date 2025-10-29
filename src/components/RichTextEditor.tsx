@@ -48,13 +48,9 @@ const ensureGlobalStyles = () => {
     [data-rich-text-editor] {
       font-size: var(--rte-body-size, 20px);
       line-height: var(--rte-body-line-height, 1.65);
-      writing-mode: horizontal-tb;
-      text-orientation: mixed;
       white-space: pre-wrap;
       word-break: break-word;
       overflow-wrap: break-word;
-      direction: ltr;
-      unicode-bidi: plaintext;
     }
     [data-rich-text-editor] p,
     [data-rich-text-editor] li,
@@ -153,13 +149,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const editorStyle = React.useMemo<React.CSSProperties>(
     () => ({
       ...cssVars,
-      writingMode: "horizontal-tb",
-      textOrientation: "mixed",
       whiteSpace: "pre-wrap",
       wordBreak: "break-word",
       overflowWrap: "break-word",
-      direction: "ltr",
-      unicodeBidi: "plaintext",
     }),
     [cssVars],
   );
