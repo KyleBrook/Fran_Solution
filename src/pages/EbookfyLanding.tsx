@@ -214,6 +214,15 @@ const EbookfyLanding = () => {
           </p>
         </div>
 
+        <div className="mb-8 flex justify-center">
+          <Button size="lg" className="h-11 px-6" asChild>
+            <a href="/login">
+              Quero ver na prática
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </a>
+          </Button>
+        </div>
+
         <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="max-w-xl">
             <h3 className="text-3xl font-semibold md:text-4xl">
@@ -405,7 +414,7 @@ const EbookfyLanding = () => {
       </section>
 
       <footer className="border-t border-white/10 bg-slate-950 py-8">
-        <div className="container mx-auto flex flex-col items-center definitivamente gap-4 px-6 text-center text-sm text-slate-400 md:flex-row md:text-left">
+        <div className="container mx-auto flex flex-col items-center gap-4 px-6 text-center text-sm text-slate-400 md:flex-row md:text-left">
           <p>&copy; {new Date().getFullYear()} EbookFy. Todos os direitos reservados.</p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs uppercase tracking-wide text-slate-400 md:justify-end">
             <span>PDF em segundos</span>
