@@ -13,6 +13,7 @@ import Upgrade from "./pages/Upgrade";
 import AuthProvider from "./components/auth/AuthProvider";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import Checkout from "./pages/Checkout";
+import EbookfyLanding from "./pages/EbookfyLanding";
 
 const queryClient = new QueryClient();
 
@@ -24,19 +25,69 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Rota pública */}
+            {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
+            <Route path="/ebookfy" element={<EbookfyLanding />} />
 
             {/* Rotas privadas */}
-            <Route path="/" element={<PrivateRoute><Index /></PrivateRoute>} />
-            <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
-            <Route path="/criar-pdf" element={<PrivateRoute><CreatePDF /></PrivateRoute>} />
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/upgrade" element={<PrivateRoute><Upgrade /></PrivateRoute>} />
-            <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Index />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/home"
+              element={
+                <PrivateRoute>
+                  <Home />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/criar-pdf"
+              element={
+                <PrivateRoute>
+                  <CreatePDF />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/upgrade"
+              element={
+                <PrivateRoute>
+                  <Upgrade />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <PrivateRoute>
+                  <Checkout />
+                </PrivateRoute>
+              }
+            />
 
             {/* Catch-all protegido */}
-            <Route path="*" element={<PrivateRoute><NotFound /></PrivateRoute>} />
+            <Route
+              path="*"
+              element={
+                <PrivateRoute>
+                  <NotFound />
+                </PrivateRoute>
+              }
+            />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
