@@ -53,6 +53,8 @@ const ensureGlobalStyles = () => {
       white-space: pre-wrap;
       word-break: break-word;
       overflow-wrap: break-word;
+      direction: ltr;
+      unicode-bidi: plaintext;
     }
     [data-rich-text-editor] p,
     [data-rich-text-editor] li,
@@ -156,6 +158,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       whiteSpace: "pre-wrap",
       wordBreak: "break-word",
       overflowWrap: "break-word",
+      direction: "ltr",
+      unicodeBidi: "plaintext",
     }),
     [cssVars],
   );
