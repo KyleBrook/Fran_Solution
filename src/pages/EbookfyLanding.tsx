@@ -375,23 +375,23 @@ const EbookfyLanding = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 via-slate-950 to-slate-900" />
         <ScrollTiltCard
           intensity={7}
-          className="container relative z-10 mx-auto rounded-3xl"
+          className="container relative z-10 mx-auto max-w-4xl rounded-3xl"
           glare={false}
           scale={1.02}
         >
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center backdrop-blur">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1 text-sm text-sky-200">
+          <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-8 text-center backdrop-blur sm:p-10">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1 text-xs text-sky-200 sm:text-sm">
               <Sparkles className="h-4 w-4" />
               O futuro dos seus ebooks começa agora
             </span>
-            <h2 className="mt-6 text-balance text-4xl font-semibold text-white md:text-5xl">
+            <h2 className="mt-6 text-balance text-3xl font-semibold text-white sm:text-4xl md:text-5xl">
               Está pronto para transformar a criação de ebooks na sua empresa?
             </h2>
-            <p className="mt-4 text-balance text-lg text-slate-200">
+            <p className="mt-4 text-balance text-base text-slate-200 sm:text-lg">
               Junte-se à EbookFy e ganhe escala, tempo e qualidade profissional. Automatize o que é repetitivo e coloque sua equipe para criar conteúdo que gera resultado.
             </p>
-            <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-              <Button size="lg" className="h-12 px-8 text-base" asChild>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
+              <Button size="lg" className="h-11 px-6 text-base sm:h-12 sm:px-8" asChild>
                 <a href="/login">
                   Experimentar grátis
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -400,7 +400,7 @@ const EbookfyLanding = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 border-white/30 bg-transparent px-8 text-base text-white hover:bg-white/10"
+                className="h-11 border-white/30 bg-transparent px-6 text-base text-white hover:bg-white/10 sm:h-12 sm:px-8"
                 asChild
               >
                 <a href="mailto:contato@ebookfy.pro">Falar com um especialista</a>
