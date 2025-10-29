@@ -12,7 +12,6 @@ function addWatermark(pageEl: HTMLElement, text: string): HTMLElement {
   overlay.style.pointerEvents = "none";
   overlay.style.zIndex = "50";
 
-  // container para múltiplas marcas diagonais
   const container = document.createElement("div");
   container.style.position = "absolute";
   container.style.inset = "0";
@@ -20,7 +19,6 @@ function addWatermark(pageEl: HTMLElement, text: string): HTMLElement {
   container.style.placeItems = "center";
   container.style.opacity = "0.12";
 
-  // criar várias linhas para cobrir a página
   for (let i = 0; i < 5; i++) {
     const line = document.createElement("div");
     line.textContent = text;
@@ -42,7 +40,7 @@ function addWatermark(pageEl: HTMLElement, text: string): HTMLElement {
   return overlay;
 }
 
-export async function exportA4PagesToPDF(filename = "documento.pdf", opts: ExportOptions = {}) {
+export async function exportA4PagesToPDF(filename = "documento.pdf", opts: ExportOptions = {}): Promise<Blob> {
   const pages = Array.from(document.querySelectorAll(".page")) as HTMLElement[];
   if (pages.length === 0) {
     throw new Error("Nenhuma página encontrada para exportar.");
@@ -50,7 +48,6 @@ export async function exportA4PagesToPDF(filename = "documento.pdf", opts: Expor
 
   const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
 
-  // Aplica marca d'água (se necessário)
   const overlays: HTMLElement[] = [];
   if (opts.watermarkText) {
     pages.forEach((el) => {
@@ -73,9 +70,10 @@ export async function exportA4PagesToPDF(filename = "documento.pdf", opts: Expor
       doc.addImage(imgData, "PNG", 0, 0, 210, 297, undefined, "FAST");
     }
 
+    const pdfBlob = doc.output("blob") as Blob;
     doc.save(filename);
+    return pdfBlob;
   } finally {
-    // Remove overlays
     overlays.forEach((ov) => ov.parentElement?.removeChild(ov));
   }
 }

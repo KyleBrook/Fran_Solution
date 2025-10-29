@@ -67,6 +67,7 @@ const DEFAULT_BODY = `
 `;
 
 const widthOptions = [40, 50, 60, 70, 80, 90, 100];
+const STORAGE_KEY = "ebookfy:create_pdf_state:v1";
 
 const slugify = (value: string, fallback = "documento") => {
   const base = (value || fallback)
@@ -196,7 +197,114 @@ const CreatePDF: React.FC = () => {
   const [selectedParagraph, setSelectedParagraph] = React.useState("0");
 
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [draftLoaded, setDraftLoaded] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        setDraftLoaded(true);
+        return;
+      }
+      const saved = JSON.parse(raw) as Partial<{
+        lessonNumber: string;
+        topic: string;
+        title: string;
+        subtitle: string;
+        signatureTitle: string;
+        signatureSubtitle: string;
+        coverBackground: string;
+        logo: string;
+        contentBackground: string;
+        pageLogo: string;
+        language: string;
+        justifyText: boolean;
+        bodyHtml: string;
+        suggestions: string;
+        images: ImageItem[];
+        selectedParagraph: string;
+      }>;
+
+      if (typeof saved.lessonNumber === "string") setLessonNumber(saved.lessonNumber);
+      if (typeof saved.topic === "string") setTopic(saved.topic);
+      if (typeof saved.title === "string") setTitle(saved.title);
+      if (typeof saved.subtitle === "string") setSubtitle(saved.subtitle);
+      if (typeof saved.signatureTitle === "string") setSignatureTitle(saved.signatureTitle);
+      if (typeof saved.signatureSubtitle === "string") setSignatureSubtitle(saved.signatureSubtitle);
+      if (typeof saved.coverBackground === "string") setCoverBackground(saved.coverBackground);
+      if (typeof saved.logo === "string") setLogo(saved.logo);
+      if (typeof saved.contentBackground === "string") setContentBackground(saved.contentBackground);
+      if (typeof saved.pageLogo === "string") setPageLogo(saved.pageLogo);
+      if (typeof saved.language === "string") setLanguage(saved.language);
+      if (typeof saved.justifyText === "boolean") setJustifyText(saved.justifyText);
+      if (typeof saved.bodyHtml === "string") setBodyHtml(saved.bodyHtml);
+      if (typeof saved.suggestions === "string") setSuggestions(saved.suggestions);
+      if (typeof saved.selectedParagraph === "string") setSelectedParagraph(saved.selectedParagraph);
+
+      if (Array.isArray(saved.images)) {
+        setImages(
+          saved.images.map((img) => ({
+            id: img.id || crypto.randomUUID(),
+            src: img.src || "",
+            caption: img.caption ?? "",
+            widthPercent: typeof img.widthPercent === "number" ? img.widthPercent : 80,
+            afterParagraph: typeof img.afterParagraph === "number" ? img.afterParagraph : 0,
+          })),
+        );
+      }
+    } catch (error) {
+      console.error("Não foi possível carregar o rascunho salvo.", error);
+    } finally {
+      setDraftLoaded(true);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!draftLoaded || typeof window === "undefined") return;
+    const payload = {
+      lessonNumber,
+      topic,
+      title,
+      subtitle,
+      signatureTitle,
+      signatureSubtitle,
+      coverBackground,
+      logo,
+      contentBackground,
+      pageLogo,
+      language,
+      justifyText,
+      bodyHtml,
+      suggestions,
+      images,
+      selectedParagraph,
+    };
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      console.error("Não foi possível salvar o rascunho do eBook.", error);
+    }
+  }, [
+    draftLoaded,
+    lessonNumber,
+    topic,
+    title,
+    subtitle,
+    signatureTitle,
+    signatureSubtitle,
+    coverBackground,
+    logo,
+    contentBackground,
+    pageLogo,
+    language,
+    justifyText,
+    bodyHtml,
+    suggestions,
+    images,
+    selectedParagraph,
+  ]);
 
   const parsedContent = React.useMemo(
     () => parseBodyHtml(bodyHtml, justifyText),

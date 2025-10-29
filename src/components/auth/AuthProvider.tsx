@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-const PUBLIC_ROUTES = ["/login", "/ebookfy"];
+const PUBLIC_ROUTES = ["/login", "/ebookfy", "/reset-password"];
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -54,6 +54,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
       if (event === "SIGNED_IN") {
         navigate("/dashboard", { replace: true });
+      } else if (event === "PASSWORD_RECOVERY") {
+        navigate("/reset-password", { replace: true });
       } else if (event === "SIGNED_OUT") {
         navigate("/login", { replace: true });
       }

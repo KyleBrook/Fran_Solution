@@ -6,6 +6,7 @@ import { exportA4PagesToPDF } from "@/utils/pdf-export";
 import { supabase } from "@/integrations/supabase/client";
 import { useEntitlements } from "@/features/subscription/useEntitlements";
 import { getMonthlyExportCount } from "@/features/subscription/usage";
+import { uploadPdfToSupabase } from "@/integrations/supabase/storage";
 
 type ExportPDFButtonProps = {
   filename?: string;
@@ -33,30 +34,35 @@ const ExportPDFButton: React.FC<ExportPDFButtonProps> = ({
         return;
       }
 
-      // Checar limite mensal antes de exportar
       const used = await getMonthlyExportCount(user.id);
       if (used >= monthlyExportLimit) {
         showError("Você atingiu o limite de exportações do seu plano. Atualize para continuar.");
-        // Redireciona para upgrade (opcional)
         setTimeout(() => {
           window.location.href = "/upgrade";
         }, 500);
         return;
       }
 
-      await exportA4PagesToPDF(filename, {
+      const pdfBlob = await exportA4PagesToPDF(filename, {
         watermarkText: watermarkRequired ? "Gerado no EbookFy" : undefined,
       });
-      showSuccess("PDF exportado com sucesso!");
 
-      // Registrar no histórico
+      const pdfFile = new File([pdfBlob], filename, { type: "application/pdf" });
+      const pdfUrl = await uploadPdfToSupabase(pdfFile, {
+        folder: `pdf_exports/${user.id}`,
+      });
+
       const pages = Array.from(document.querySelectorAll(".page")).length || null;
+
       await supabase.from("pdf_history").insert({
         user_id: user.id,
         title: titleForHistory || document.title || null,
         filename,
         pages,
+        file_url: pdfUrl,
       });
+
+      showSuccess("PDF exportado com sucesso!");
     } catch (e) {
       console.error(e);
       showError("Não foi possível exportar o PDF.");

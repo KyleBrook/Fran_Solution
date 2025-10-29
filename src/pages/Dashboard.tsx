@@ -23,6 +23,7 @@ type PdfHistory = {
   filename: string;
   pages: number | null;
   created_at: string;
+  file_url: string | null;
 };
 
 const Dashboard: React.FC = () => {
@@ -237,6 +238,7 @@ const Dashboard: React.FC = () => {
                           <TableHead>Arquivo</TableHead>
                           <TableHead className="text-right">Páginas</TableHead>
                           <TableHead>Data</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -247,8 +249,17 @@ const Dashboard: React.FC = () => {
                             </TableCell>
                             <TableCell className="break-all">{h.filename}</TableCell>
                             <TableCell className="text-right">{h.pages ?? "-"}</TableCell>
-                            <TableCell>
-                              {new Date(h.created_at).toLocaleString()}
+                            <TableCell>{new Date(h.created_at).toLocaleString()}</TableCell>
+                            <TableCell className="text-right">
+                              {h.file_url ? (
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={h.file_url} target="_blank" rel="noopener noreferrer">
+                                    Abrir PDF
+                                  </a>
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Não disponível</span>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}

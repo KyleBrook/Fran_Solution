@@ -14,6 +14,7 @@ import AuthProvider from "./components/auth/AuthProvider";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import Checkout from "./pages/Checkout";
 import EbookfyLanding from "./pages/EbookfyLanding";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
             {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/ebookfy" element={<EbookfyLanding />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Rotas privadas */}
             <Route
