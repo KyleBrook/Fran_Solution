@@ -15,6 +15,7 @@ import PrivateRoute from "./components/auth/PrivateRoute";
 import Checkout from "./pages/Checkout";
 import EbookfyLanding from "./pages/EbookfyLanding";
 import ResetPassword from "./pages/ResetPassword";
+import MetaPixel from "@/components/analytics/MetaPixel";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <MetaPixel />
         <AuthProvider>
           <Routes>
             {/* Rotas públicas */}
