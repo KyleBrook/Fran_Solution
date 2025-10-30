@@ -46,11 +46,11 @@ const DEFAULTS = {
   coverBackground:
     "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Background.png",
   logo:
-    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
+    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/your-logo-here.png",
   contentBackground:
     "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/fundo%20imagens%20luma.png",
   pageLogo:
-    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Logo%20EDD.PNG",
+    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/your-logo-here.png",
 };
 
 const DEFAULT_BODY = `
@@ -551,17 +551,14 @@ const CreatePDF: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label>Imagem de fundo (capa)</Label>
-                <div className="flex items-center gap-2">
-                  <Input value={coverBackground} onChange={(e) => setCoverBackground(e.target.value)} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => coverBackgroundInputRef.current?.click()}
-                  >
-                    <UploadCloud className="mr-2 h-4 w-4" />
-                    Upload
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => coverBackgroundInputRef.current?.click()}
+                >
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  Upload imagem de fundo
+                </Button>
                 <input
                   ref={coverBackgroundInputRef}
                   type="file"
@@ -574,17 +571,14 @@ const CreatePDF: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label>Logo da capa</Label>
-                <div className="flex items-center gap-2">
-                  <Input value={logo} onChange={(e) => setLogo(e.target.value)} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => logoInputRef.current?.click()}
-                  >
-                    <UploadCloud className="mr-2 h-4 w-4" />
-                    Upload
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  Upload logo da capa
+                </Button>
                 <input
                   ref={logoInputRef}
                   type="file"
@@ -603,17 +597,14 @@ const CreatePDF: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Logo no conteúdo</Label>
-                <div className="flex items-center gap-2">
-                  <Input value={pageLogo} onChange={(e) => setPageLogo(e.target.value)} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => pageLogoInputRef.current?.click()}
-                  >
-                    <UploadCloud className="mr-2 h-4 w-4" />
-                    Upload
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => pageLogoInputRef.current?.click()}
+                >
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  Upload logo do conteúdo
+                </Button>
                 <input
                   ref={pageLogoInputRef}
                   type="file"
@@ -624,20 +615,14 @@ const CreatePDF: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label>Background das páginas</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={contentBackground}
-                    onChange={(e) => setContentBackground(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => contentBackgroundInputRef.current?.click()}
-                  >
-                    <UploadCloud className="mr-2 h-4 w-4" />
-                    Upload
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => contentBackgroundInputRef.current?.click()}
+                >
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  Upload background
+                </Button>
                 <input
                   ref={contentBackgroundInputRef}
                   type="file"
