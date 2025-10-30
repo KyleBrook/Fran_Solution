@@ -45,12 +45,10 @@ type ParsedContent = {
 const DEFAULTS = {
   coverBackground:
     "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/Background.png",
-  logo:
-    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/your-logo-here.png",
+  logo: "",
   contentBackground:
     "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/fundo%20imagens%20luma.png",
-  pageLogo:
-    "https://nolrnrwzeurbimcnjlwm.supabase.co/storage/v1/object/public/Luma__Fran/your-logo-here.png",
+  pageLogo: "",
 };
 
 const DEFAULT_BODY = `

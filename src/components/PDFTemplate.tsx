@@ -23,7 +23,12 @@ export const CoverPage: React.FC<CoverProps> = ({
   signatureSubtitle,
 }) => {
   const safeBackground = background || "/placeholder.svg";
-  const [showLogo, setShowLogo] = React.useState(true);
+  const hasLogo = Boolean(logo);
+  const [showLogo, setShowLogo] = React.useState(hasLogo);
+
+  React.useEffect(() => {
+    setShowLogo(Boolean(logo));
+  }, [logo]);
 
   return (
     <div
@@ -33,14 +38,13 @@ export const CoverPage: React.FC<CoverProps> = ({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundColor: "#ffffff",
-        // Mantém padding externo pequeno para a logo
         padding: PAGE_PADDING_PX,
       }}
     >
       <div className="absolute inset-0 bg-white/35 pointer-events-none" />
-      {showLogo && (
+      {showLogo && logo && (
         <img
-          src={logo || "/favicon.ico"}
+          src={logo}
           alt="Logo"
           className="absolute w-28 h-auto object-contain"
           style={{ top: PAGE_PADDING_PX, right: PAGE_PADDING_PX }}
@@ -91,6 +95,12 @@ export const ContentPage: React.FC<ContentProps> = ({
   justifyText = true,
   language = "pt-BR",
 }) => {
+  const [showLogo, setShowLogo] = React.useState(Boolean(topRightLogo));
+
+  React.useEffect(() => {
+    setShowLogo(Boolean(topRightLogo));
+  }, [topRightLogo]);
+
   return (
     <div
       className={classNames(
@@ -103,20 +113,19 @@ export const ContentPage: React.FC<ContentProps> = ({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundColor: "#ffffff",
-        // Mantém padding externo da página pequeno para a logo
         padding: PAGE_PADDING_PX,
       }}
     >
-      {topRightLogo && (
+      {showLogo && topRightLogo && (
         <img
           src={topRightLogo}
           alt="Logo da página"
           className="absolute w-24 h-auto object-contain"
           style={{ top: PAGE_PADDING_PX, right: PAGE_PADDING_PX }}
+          onError={() => setShowLogo(false)}
         />
       )}
 
-      {/* Caixa de texto com INSET adicional para margens internas maiores */}
       <div className="relative z-10">
         <div
           className={classNames(
