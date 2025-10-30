@@ -168,14 +168,6 @@ const EbookfyLanding = () => {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </a>
                 </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-12 border-white/30 bg-transparent px-8 text-base text-white hover:bg-white/10"
-                  asChild
-                >
-                  <a href="/upgrade">Ver planos e preços</a>
-                </Button>
               </div>
             </div>
             <Scroll3DScene />
@@ -315,6 +307,15 @@ const EbookfyLanding = () => {
               );
             })}
           </div>
+
+          <div className="flex justify-center">
+            <Button size="lg" className="h-11 px-6" asChild>
+              <a href="/login">
+                Criar Meu Primeiro Ebook
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -396,17 +397,9 @@ const EbookfyLanding = () => {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
               <Button size="lg" className="h-11 px-6 text-base sm:h-12 sm:px-8" asChild>
                 <a href="/login">
-                  Experimentar grátis
+                  Criar Ebook Agora
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </a>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-11 border-white/30 bg-transparent px-6 text-base text-white hover:bg-white/10 sm:h-12 sm:px-8"
-                asChild
-              >
-                <a href="mailto:contato@ebookfy.pro">Falar com um especialista</a>
               </Button>
             </div>
           </div>
