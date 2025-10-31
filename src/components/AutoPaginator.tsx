@@ -10,6 +10,7 @@ type AutoPaginatorProps = {
 };
 
 const DEFAULT_MAX_HEIGHT = 940; // ~A4 altura 1121px - paddings/rodapé
+const BOTTOM_BUFFER_PX = 48; // margem reservada no rodapé para não “colar” conteúdo
 
 const AutoPaginator: React.FC<AutoPaginatorProps> = ({
   blocks,
@@ -28,8 +29,11 @@ const AutoPaginator: React.FC<AutoPaginatorProps> = ({
     const childrenEls = Array.from(container.children) as HTMLElement[];
     const heights = childrenEls.map((el) => el.offsetHeight);
 
-    // Considerar o inset vertical aplicado dentro da página
-    const availableHeight = Math.max(0, pageContentMaxHeight - CONTENT_INSET_PX * 2);
+    // Considerar o inset vertical aplicado dentro da página + buffer inferior fixo
+    const availableHeight = Math.max(
+      0,
+      pageContentMaxHeight - CONTENT_INSET_PX * 2 - BOTTOM_BUFFER_PX,
+    );
 
     const newPages: React.ReactNode[][] = [];
     let current: React.ReactNode[] = [];
