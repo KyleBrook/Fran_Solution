@@ -93,88 +93,165 @@ const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
   const doc = parser.parseFromString(`<div>${safe}</div>`, "text/html");
   const blocks: React.ReactNode[] = [];
   const paragraphs: string[] = [];
-  let index = 0;
+  let blockIndex = 0;
 
-  const baseParagraphClass = justify ? "text-justify" : "";
-  Array.from(doc.body.children).forEach((element) => {
-    const key = `block-${index}`;
-    index += 1;
+  const paragraphClass = justify
+    ? "mb-4 leading-relaxed text-justify"
+    : "mb-4 leading-relaxed";
+
+  const addParagraphFromHtml = (htmlContent: string, textContent: string) => {
+    const trimmedHtml = htmlContent.trim();
+    const trimmedText = textContent.trim();
+    if (!trimmedHtml && !trimmedText) return;
+    const key = `block-${blockIndex++}`;
+    blocks.push(
+      <p
+        key={key}
+        className={paragraphClass}
+        dangerouslySetInnerHTML={{ __html: trimmedHtml || trimmedText }}
+      />,
+    );
+    if (trimmedText) paragraphs.push(trimmedText);
+  };
+
+  const addParagraphFromText = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const key = `block-${blockIndex++}`;
+    blocks.push(
+      <p key={key} className={paragraphClass}>
+        {trimmed}
+      </p>,
+    );
+    paragraphs.push(trimmed);
+  };
+
+  const addHeading = (element: HTMLElement, level: 1 | 2 | 3) => {
     const textContent = (element.textContent || "").trim();
+    if (!textContent) return;
+    const key = `block-${blockIndex++}`;
+    const className =
+      level === 1
+        ? "text-4xl font-bold mb-4"
+        : level === 2
+          ? "text-3xl font-semibold mt-6 mb-3"
+          : "text-2xl font-semibold mt-5 mb-3";
+    blocks.push(
+      React.createElement(`h${level}`, {
+        key,
+        className,
+        dangerouslySetInnerHTML: { __html: element.innerHTML },
+      }),
+    );
+  };
 
-    switch (element.tagName.toLowerCase()) {
-      case "h1":
-        blocks.push(
-          <h1
-            key={key}
-            className="text-4xl font-bold mb-4"
-            dangerouslySetInnerHTML={{ __html: element.innerHTML }}
-          />,
-        );
-        break;
-      case "h2":
-        blocks.push(
-          <h2
-            key={key}
-            className="text-3xl font-semibold mt-6 mb-3"
-            dangerouslySetInnerHTML={{ __html: element.innerHTML }}
-          />,
-        );
-        break;
-      case "h3":
-        blocks.push(
-          <h3
-            key={key}
-            className="text-2xl font-semibold mt-5 mb-3"
-            dangerouslySetInnerHTML={{ __html: element.innerHTML }}
-          />,
-        );
-        break;
-      case "blockquote":
-        paragraphs.push(textContent);
-        blocks.push(
-          <blockquote
-            key={key}
-            className="border-l-4 border-muted-foreground/40 pl-4 italic my-4"
-            dangerouslySetInnerHTML={{ __html: element.innerHTML }}
-          />,
-        );
-        break;
-      case "ul":
-        paragraphs.push(textContent);
-        blocks.push(
-          <ul
-            key={key}
-            className="list-disc pl-6 space-y-1 my-4"
-            dangerouslySetInnerHTML={{ __html: element.innerHTML }}
-          />,
-        );
-        break;
-      case "ol":
-        paragraphs.push(textContent);
-        blocks.push(
-          <ol
-            key={key}
-            className="list-decimal pl-6 space-y-1 my-4"
-            dangerouslySetInnerHTML={{ __html: element.innerHTML }}
-          />,
-        );
-        break;
-      case "hr":
-        blocks.push(<hr key={key} className="my-6 border-muted-foreground/50" />);
-        break;
-      case "p":
-      default:
-        paragraphs.push(textContent);
-        blocks.push(
-          <p
-            key={key}
-            className={`mb-4 leading-relaxed ${baseParagraphClass}`}
-            dangerouslySetInnerHTML={{ __html: element.innerHTML }}
-          />,
-        );
-        break;
+  const addBlockquote = (element: HTMLElement) => {
+    const textContent = (element.textContent || "").trim();
+    if (!textContent) return;
+    const key = `block-${blockIndex++}`;
+    blocks.push(
+      <blockquote
+        key={key}
+        className="border-l-4 border-muted-foreground/40 pl-4 italic my-4"
+        dangerouslySetInnerHTML={{ __html: element.innerHTML }}
+      />,
+    );
+    paragraphs.push(textContent);
+  };
+
+  const addList = (element: HTMLElement, ordered: boolean) => {
+    const textContent = (element.textContent || "").trim();
+    if (!textContent) return;
+    const key = `block-${blockIndex++}`;
+    const Tag = ordered ? "ol" : "ul";
+    blocks.push(
+      React.createElement(Tag, {
+        key,
+        className: ordered ? "list-decimal pl-6 space-y-1 my-4" : "list-disc pl-6 space-y-1 my-4",
+        dangerouslySetInnerHTML: { __html: element.innerHTML },
+      }),
+    );
+    paragraphs.push(textContent);
+  };
+
+  const addDivider = () => {
+    const key = `block-${blockIndex++}`;
+    blocks.push(<hr key={key} className="my-6 border-muted-foreground/50" />);
+  };
+
+  const processNode = (node: ChildNode) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const value = node.textContent ?? "";
+      const segments = value
+        .replace(/\r\n/g, "\n")
+        .split(/\n{2,}/)
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+      segments.forEach(addParagraphFromText);
+      return;
     }
-  });
+
+    if (!(node instanceof HTMLElement)) return;
+
+    const tag = node.tagName.toLowerCase();
+
+    switch (tag) {
+      case "h1":
+        addHeading(node, 1);
+        return;
+      case "h2":
+        addHeading(node, 2);
+        return;
+      case "h3":
+        addHeading(node, 3);
+        return;
+      case "p":
+        addParagraphFromHtml(node.innerHTML, node.textContent || "");
+        return;
+      case "blockquote":
+        addBlockquote(node);
+        return;
+      case "ul":
+        addList(node, false);
+        return;
+      case "ol":
+        addList(node, true);
+        return;
+      case "hr":
+        addDivider();
+        return;
+      case "br":
+        return;
+      case "div":
+      case "section":
+      case "article":
+      case "span":
+      case "header":
+      case "footer":
+      case "main":
+        Array.from(node.childNodes).forEach(processNode);
+        return;
+      default: {
+        if (node.childNodes.length > 0) {
+          Array.from(node.childNodes).forEach(processNode);
+        } else {
+          addParagraphFromText(node.textContent || "");
+        }
+      }
+    }
+  };
+
+  Array.from(doc.body.childNodes).forEach(processNode);
+
+  if (blocks.length === 0) {
+    const fallbackSource = (doc.body.textContent || safe || "")
+      .replace(/\r\n/g, "\n")
+      .split(/\n{2,}/)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+
+    fallbackSource.forEach(addParagraphFromText);
+  }
 
   return { blocks, paragraphs };
 };
@@ -846,25 +923,21 @@ const CreatePDF: React.FC = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex items-center justify_between">
+            <CardHeader className="flex items-center justify-between">
               <CardTitle>Pré-visualização</CardTitle>
               <ExportPDFButton filename={filename} titleForHistory={title} />
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">
-                      Páginas detectadas: {imageBlocks.length > 0 ? "auto" : "manual"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Ajuste o conteúdo e clique em exportar para gerar o PDF final.
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-sm">
+                    O conteúdo é dividido automaticamente em páginas A4.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ajuste o texto e clique em exportar para gerar o PDF final.
+                  </p>
                 </div>
-                <div className="space-y-4">
-                  <PDFGenerator data={pdfData} />
-                </div>
+                <PDFGenerator data={pdfData} />
               </div>
             </CardContent>
           </Card>
