@@ -23,10 +23,9 @@ const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
     language = "pt-BR",
   } = data;
 
-  return (
-    <>
-      <CoverPage {...cover} />
-      {Array.isArray(blocks) && blocks.length > 0 ? (
+  const renderContent = () => {
+    if (Array.isArray(blocks) && blocks.length > 0) {
+      return (
         <AutoPaginator
           blocks={blocks}
           justifyText={justifyText}
@@ -43,20 +42,27 @@ const PDFGenerator: React.FC<{ data: PDFData }> = ({ data }) => {
             </ContentPage>
           )}
         />
-      ) : (
-        (pages || []).map((content, index) => (
-          <ContentPage
-            key={index}
-            backgroundImage={contentBackground}
-            topRightLogo={pageTopRightLogo}
-            justifyText={justifyText}
-            language={language}
-          >
-            {content}
-          </ContentPage>
-        ))
-      )}
-    </>
+      );
+    }
+
+    return (pages || []).map((content, index) => (
+      <ContentPage
+        key={index}
+        backgroundImage={contentBackground}
+        topRightLogo={pageTopRightLogo}
+        justifyText={justifyText}
+        language={language}
+      >
+        {content}
+      </ContentPage>
+    ));
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-10 print:gap-0">
+      <CoverPage {...cover} />
+      {renderContent()}
+    </div>
   );
 };
 
