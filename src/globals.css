@@ -107,6 +107,10 @@
     @apply border-l-8 border-gray-300 pl-6 italic my-5;
   }
 
+  .presentation-content > :last-child {
+    @apply mb-8;
+  }
+
   /* Justificação opcional apenas para parágrafos, com hifenização */
   .presentation-content.justify-text {
     hyphens: auto;
