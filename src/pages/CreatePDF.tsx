@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -28,14 +28,7 @@ import { uploadImageToSupabase } from "@/integrations/supabase/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { useEntitlements } from "@/features/subscription/useEntitlements";
 import { sanitizeHtml, convertHtmlToText } from "@/utils/rich-text";
-
-type ImageItem = {
-  id: string;
-  src: string;
-  caption?: string;
-  widthPercent: number;
-  afterParagraph: number;
-};
+import type { ImageItem, ParagraphOption } from "@/components/create-pdf/types";
 
 type ParsedContent = {
   blocks: React.ReactNode[];
@@ -64,9 +57,9 @@ const DEFAULT_BODY = `
 <p>Quando estiver satisfeito, utilize a pré-visualização ao lado para ver como o seu PDF ficará antes de exportar.</p>
 `;
 
-const widthOptions = [40, 50, 60, 70, 80, 90, 100];
 const STORAGE_KEY = "ebookfy:create_pdf_state:v1";
-const languageOptions = [
+const IMAGE_WIDTH_OPTIONS = [40, 50, 60, 70, 80, 90, 100];
+const LANGUAGE_OPTIONS = [
   { value: "pt-BR", label: "Português (Brasil)" },
   { value: "en-US", label: "English (US)" },
   { value: "es-ES", label: "Español (ES)" },
@@ -83,11 +76,21 @@ const slugify = (value: string, fallback = "documento") => {
   return base ? `${base}.pdf` : "documento.pdf";
 };
 
+const createParagraphNode = (
+  key: string,
+  content: string,
+  justify: boolean,
+): React.ReactNode => (
+  <p
+    key={key}
+    className={`mb-4 leading-relaxed ${justify ? "text-justify" : ""}`}
+    dangerouslySetInnerHTML={{ __html: content }}
+  />
+);
+
 const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
   const safe = sanitizeHtml(html || "");
-  if (typeof window === "undefined") {
-    return { blocks: [], paragraphs: [] };
-  }
+  if (typeof window === "undefined") return { blocks: [], paragraphs: [] };
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${safe}</div>`, "text/html");
@@ -95,40 +98,18 @@ const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
   const paragraphs: string[] = [];
   let blockIndex = 0;
 
-  const paragraphClass = justify
-    ? "mb-4 leading-relaxed text-justify"
-    : "mb-4 leading-relaxed";
-
-  const addParagraphFromHtml = (htmlContent: string, textContent: string) => {
-    const trimmedHtml = htmlContent.trim();
-    const trimmedText = textContent.trim();
-    if (!trimmedHtml && !trimmedText) return;
+  const addParagraph = (text: string, htmlContent?: string) => {
+    const trimmedText = text.trim();
+    const trimmedHtml = (htmlContent ?? text).trim();
+    if (!trimmedText && !trimmedHtml) return;
     const key = `block-${blockIndex++}`;
-    blocks.push(
-      <p
-        key={key}
-        className={paragraphClass}
-        dangerouslySetInnerHTML={{ __html: trimmedHtml || trimmedText }}
-      />,
-    );
+    blocks.push(createParagraphNode(key, trimmedHtml, justify));
     if (trimmedText) paragraphs.push(trimmedText);
   };
 
-  const addParagraphFromText = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const key = `block-${blockIndex++}`;
-    blocks.push(
-      <p key={key} className={paragraphClass}>
-        {trimmed}
-      </p>,
-    );
-    paragraphs.push(trimmed);
-  };
-
   const addHeading = (element: HTMLElement, level: 1 | 2 | 3) => {
-    const textContent = (element.textContent || "").trim();
-    if (!textContent) return;
+    const text = element.textContent?.trim() ?? "";
+    if (!text) return;
     const key = `block-${blockIndex++}`;
     const className =
       level === 1
@@ -146,8 +127,8 @@ const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
   };
 
   const addBlockquote = (element: HTMLElement) => {
-    const textContent = (element.textContent || "").trim();
-    if (!textContent) return;
+    const text = element.textContent?.trim() ?? "";
+    if (!text) return;
     const key = `block-${blockIndex++}`;
     blocks.push(
       <blockquote
@@ -156,22 +137,24 @@ const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
         dangerouslySetInnerHTML={{ __html: element.innerHTML }}
       />,
     );
-    paragraphs.push(textContent);
+    paragraphs.push(text);
   };
 
   const addList = (element: HTMLElement, ordered: boolean) => {
-    const textContent = (element.textContent || "").trim();
-    if (!textContent) return;
+    const text = element.textContent?.trim() ?? "";
+    if (!text) return;
     const key = `block-${blockIndex++}`;
     const Tag = ordered ? "ol" : "ul";
     blocks.push(
       React.createElement(Tag, {
         key,
-        className: ordered ? "list-decimal pl-6 space-y-1 my-4" : "list-disc pl-6 space-y-1 my-4",
+        className: ordered
+          ? "list-decimal pl-6 space-y-1 my-4"
+          : "list-disc pl-6 space-y-1 my-4",
         dangerouslySetInnerHTML: { __html: element.innerHTML },
       }),
     );
-    paragraphs.push(textContent);
+    paragraphs.push(text);
   };
 
   const addDivider = () => {
@@ -182,75 +165,65 @@ const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
   const processNode = (node: ChildNode) => {
     if (node.nodeType === Node.TEXT_NODE) {
       const value = node.textContent ?? "";
-      const segments = value
+      value
         .replace(/\r\n/g, "\n")
         .split(/\n{2,}/)
         .map((segment) => segment.trim())
-        .filter(Boolean);
-      segments.forEach(addParagraphFromText);
+        .filter(Boolean)
+        .forEach((segment) => addParagraph(segment));
       return;
     }
 
     if (!(node instanceof HTMLElement)) return;
 
     const tag = node.tagName.toLowerCase();
-
     switch (tag) {
       case "h1":
         addHeading(node, 1);
-        return;
+        break;
       case "h2":
         addHeading(node, 2);
-        return;
+        break;
       case "h3":
         addHeading(node, 3);
-        return;
+        break;
       case "p":
-        addParagraphFromHtml(node.innerHTML, node.textContent || "");
-        return;
+        addParagraph(node.textContent ?? "", node.innerHTML);
+        break;
       case "blockquote":
         addBlockquote(node);
-        return;
+        break;
       case "ul":
         addList(node, false);
-        return;
+        break;
       case "ol":
         addList(node, true);
-        return;
+        break;
       case "hr":
         addDivider();
-        return;
+        break;
       case "br":
-        return;
-      case "div":
-      case "section":
-      case "article":
-      case "span":
-      case "header":
-      case "footer":
-      case "main":
-        Array.from(node.childNodes).forEach(processNode);
-        return;
-      default: {
+        break;
+      default:
         if (node.childNodes.length > 0) {
           Array.from(node.childNodes).forEach(processNode);
         } else {
-          addParagraphFromText(node.textContent || "");
+          addParagraph(node.textContent ?? "");
         }
-      }
+        break;
     }
   };
 
   Array.from(doc.body.childNodes).forEach(processNode);
 
   if (blocks.length === 0) {
-    const fallbackSource = (doc.body.textContent || safe || "")
+    const fallback = (doc.body.textContent || safe || "")
       .replace(/\r\n/g, "\n")
       .split(/\n{2,}/)
       .map((segment) => segment.trim())
       .filter(Boolean);
 
-    fallbackSource.forEach(addParagraphFromText);
+    fallback.forEach((segment) => addParagraph(segment));
   }
 
   return { blocks, paragraphs };
@@ -259,33 +232,34 @@ const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
 const CreatePDF: React.FC = () => {
   const { aiEnabled } = useEntitlements();
 
-  const [lessonNumber, setLessonNumber] = React.useState("M1 | Aula 01");
-  const [topic, setTopic] = React.useState("Tema da Aula");
-  const [title, setTitle] = React.useState("Meu eBook incrível");
-  const [subtitle, setSubtitle] = React.useState("Uma jornada em poucas páginas");
-  const [signatureTitle, setSignatureTitle] = React.useState("EbookFy");
-  const [signatureSubtitle, setSignatureSubtitle] = React.useState("Ebook em segundos");
-  const [coverBackground, setCoverBackground] = React.useState(DEFAULTS.coverBackground);
-  const [logo, setLogo] = React.useState(DEFAULTS.logo);
-  const [contentBackground, setContentBackground] = React.useState(DEFAULTS.contentBackground);
-  const [pageLogo, setPageLogo] = React.useState(DEFAULTS.pageLogo);
-  const [language, setLanguage] = React.useState("pt-BR");
-  const [justifyText, setJustifyText] = React.useState(true);
+  const [lessonNumber, setLessonNumber] = useState("M1 | Aula 01");
+  const [topic, setTopic] = useState("Tema da Aula");
+  const [title, setTitle] = useState("Meu eBook incrível");
+  const [subtitle, setSubtitle] = useState("Uma jornada em poucas páginas");
+  const [signatureTitle, setSignatureTitle] = useState("EbookFy");
+  const [signatureSubtitle, setSignatureSubtitle] = useState("Ebook em segundos");
+  const [coverBackground, setCoverBackground] = useState(DEFAULTS.coverBackground);
+  const [logo, setLogo] = useState(DEFAULTS.logo);
+  const [contentBackground, setContentBackground] = useState(DEFAULTS.contentBackground);
+  const [pageLogo, setPageLogo] = useState(DEFAULTS.pageLogo);
+  const [language, setLanguage] = useState("pt-BR");
+  const [justifyText, setJustifyText] = useState(true);
 
-  const [bodyHtml, setBodyHtml] = React.useState<string>(DEFAULT_BODY);
-  const [suggestions, setSuggestions] = React.useState("");
-  const [images, setImages] = React.useState<ImageItem[]>([]);
-  const [selectedParagraph, setSelectedParagraph] = React.useState("0");
+  const [bodyHtml, setBodyHtml] = useState<string>(DEFAULT_BODY);
+  const [suggestions, setSuggestions] = useState("");
+  const [images, setImages] = useState<ImageItem[]>([]);
+  const [selectedParagraph, setSelectedParagraph] = useState("0");
 
-  const [isGenerating, setIsGenerating] = React.useState(false);
-  const [draftLoaded, setDraftLoaded] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const coverBackgroundInputRef = React.useRef<HTMLInputElement | null>(null);
-  const logoInputRef = React.useRef<HTMLInputElement | null>(null);
-  const pageLogoInputRef = React.useRef<HTMLInputElement | null>(null);
-  const contentBackgroundInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
 
-  React.useEffect(() => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverBackgroundInputRef = useRef<HTMLInputElement | null>(null);
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const pageLogoInputRef = useRef<HTMLInputElement | null>(null);
+  const contentBackgroundInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -312,17 +286,17 @@ const CreatePDF: React.FC = () => {
         selectedParagraph: string;
       }>;
 
-      if (typeof saved.lessonNumber === "string") setLessonNumber(saved.lessonNumber);
-      if (typeof saved.topic === "string") setTopic(saved.topic);
-      if (typeof saved.title === "string") setTitle(saved.title);
-      if (typeof saved.subtitle === "string") setSubtitle(saved.subtitle);
-      if (typeof saved.signatureTitle === "string") setSignatureTitle(saved.signatureTitle);
-      if (typeof saved.signatureSubtitle === "string") setSignatureSubtitle(saved.signatureSubtitle);
-      if (typeof saved.coverBackground === "string") setCoverBackground(saved.coverBackground);
+      if (saved.lessonNumber) setLessonNumber(saved.lessonNumber);
+      if (saved.topic) setTopic(saved.topic);
+      if (saved.title) setTitle(saved.title);
+      if (saved.subtitle) setSubtitle(saved.subtitle);
+      if (saved.signatureTitle) setSignatureTitle(saved.signatureTitle);
+      if (saved.signatureSubtitle) setSignatureSubtitle(saved.signatureSubtitle);
+      if (saved.coverBackground) setCoverBackground(saved.coverBackground);
       if (typeof saved.logo === "string") setLogo(saved.logo);
-      if (typeof saved.contentBackground === "string") setContentBackground(saved.contentBackground);
+      if (saved.contentBackground) setContentBackground(saved.contentBackground);
       if (typeof saved.pageLogo === "string") setPageLogo(saved.pageLogo);
-      if (typeof saved.language === "string") setLanguage(saved.language);
+      if (saved.language) setLanguage(saved.language);
       if (typeof saved.justifyText === "boolean") setJustifyText(saved.justifyText);
       if (typeof saved.bodyHtml === "string") setBodyHtml(saved.bodyHtml);
       if (typeof saved.suggestions === "string") setSuggestions(saved.suggestions);
@@ -346,7 +320,7 @@ const CreatePDF: React.FC = () => {
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!draftLoaded || typeof window === "undefined") return;
     const payload = {
       lessonNumber,
@@ -391,7 +365,7 @@ const CreatePDF: React.FC = () => {
     selectedParagraph,
   ]);
 
-  const handleAssetUpload = React.useCallback(
+  const handleAssetUpload = useCallback(
     async (
       event: React.ChangeEvent<HTMLInputElement>,
       setter: React.Dispatch<React.SetStateAction<string>>,
@@ -415,27 +389,104 @@ const CreatePDF: React.FC = () => {
     [],
   );
 
-  const parsedContent = React.useMemo(
+  const handleInlineImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const toastId = showLoading("Carregando imagem...");
+      try {
+        const publicUrl = await uploadImageToSupabase(file);
+        setImages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            src: publicUrl,
+            caption: "",
+            widthPercent: 80,
+            afterParagraph: Number(selectedParagraph) || 0,
+          },
+        ]);
+        showSuccess("Imagem adicionada com sucesso!");
+      } catch (error) {
+        console.error(error);
+        showError("Não foi possível enviar a imagem.");
+      } finally {
+        dismissToast(toastId);
+        event.target.value = "";
+      }
+    },
+    [selectedParagraph],
+  );
+
+  const handleRemoveImage = useCallback((id: string) => {
+    setImages((prev) => prev.filter((img) => img.id !== id));
+  }, []);
+
+  const handleApplyAI = useCallback(async () => {
+    if (!aiEnabled) {
+      showError("O plano atual não inclui geração por IA.");
+      return;
+    }
+
+    setIsGenerating(true);
+    const toastId = showLoading("Gerando conteúdo com IA...");
+    try {
+      const { data, error } = await supabase.functions.invoke<{
+        title?: string;
+        subtitle?: string;
+        paragraphs?: string[];
+      }>("gpt-pdf-helper", {
+        body: {
+          title,
+          subtitle,
+          body: convertHtmlToText(bodyHtml),
+          language,
+          suggestions,
+        },
+      });
+
+      if (error) throw error;
+      if (!data) throw new Error("A resposta da IA está vazia.");
+
+      if (data.title) setTitle(data.title);
+      if (data.subtitle) setSubtitle(data.subtitle);
+
+      const paragraphs = (data.paragraphs ?? []).map((paragraph) => `<p>${sanitizeHtml(paragraph)}</p>`);
+      if (paragraphs.length > 0) {
+        setBodyHtml(paragraphs.join("\n"));
+      }
+
+      showSuccess("Conteúdo atualizado com ajuda da IA.");
+    } catch (err) {
+      console.error(err);
+      showError("Não foi possível gerar conteúdo com a IA.");
+    } finally {
+      dismissToast(toastId);
+      setIsGenerating(false);
+    }
+  }, [aiEnabled, bodyHtml, language, subtitle, suggestions, title]);
+
+  const parsedContent = useMemo(
     () => parseBodyHtml(bodyHtml, justifyText),
     [bodyHtml, justifyText],
   );
 
-  const imageBlocks = React.useMemo(() => {
+  const imageBlocks = useMemo(() => {
     if (images.length === 0) return parsedContent.blocks;
 
-    const byParagraph = new Map<number, ImageItem[]>();
+    const itemsByParagraph = new Map<number, ImageItem[]>();
     images.forEach((image) => {
       const key = image.afterParagraph;
-      const existing = byParagraph.get(key) ?? [];
+      const existing = itemsByParagraph.get(key) ?? [];
       existing.push(image);
-      byParagraph.set(key, existing);
+      itemsByParagraph.set(key, existing);
     });
 
     const result: React.ReactNode[] = [];
     parsedContent.blocks.forEach((block, idx) => {
       result.push(block);
       const paragraphNumber = idx + 1;
-      const items = byParagraph.get(paragraphNumber);
+      const items = itemsByParagraph.get(paragraphNumber);
       if (items) {
         items.forEach((img) => {
           result.push(
@@ -451,7 +502,7 @@ const CreatePDF: React.FC = () => {
       }
     });
 
-    const initialImages = byParagraph.get(0);
+    const initialImages = itemsByParagraph.get(0);
     if (initialImages) {
       return [
         ...initialImages.map((img) => (
@@ -470,7 +521,7 @@ const CreatePDF: React.FC = () => {
     return result;
   }, [images, parsedContent.blocks]);
 
-  const pdfData: PDFData = React.useMemo(
+  const pdfData: PDFData = useMemo(
     () => ({
       cover: {
         background: coverBackground,
@@ -501,85 +552,9 @@ const CreatePDF: React.FC = () => {
     ],
   );
 
-  const filename = React.useMemo(() => slugify(title, "ebookfy"), [title]);
+  const filename = useMemo(() => slugify(title, "ebookfy"), [title]);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const toastId = showLoading("Carregando imagem...");
-    try {
-      const publicUrl = await uploadImageToSupabase(file);
-      const newImage: ImageItem = {
-        id: crypto.randomUUID(),
-        src: publicUrl,
-        caption: "",
-        widthPercent: 80,
-        afterParagraph: Number(selectedParagraph) || 0,
-      };
-      setImages((prev) => [...prev, newImage]);
-      showSuccess("Imagem adicionada com sucesso!");
-    } catch (error) {
-      console.error(error);
-      showError("Não foi possível enviar a imagem.");
-    } finally {
-      dismissToast(toastId);
-      event.target.value = "";
-    }
-  };
-
-  const handleRemoveImage = (id: string) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
-  };
-
-  const handleApplyAI = async () => {
-    if (!aiEnabled) {
-      showError("O plano atual não inclui geração por IA.");
-      return;
-    }
-
-    setIsGenerating(true);
-    const toastId = showLoading("Gerando conteúdo com IA...");
-    try {
-      const { data, error } = await supabase.functions.invoke<{
-        title?: string;
-        subtitle?: string;
-        paragraphs?: string[];
-      }>("gpt-pdf-helper", {
-        body: {
-          title,
-          subtitle,
-          body: convertHtmlToText(bodyHtml),
-          language,
-          suggestions,
-        },
-      });
-
-      if (error) throw error;
-      if (!data) throw new Error("A resposta da IA está vazia.");
-
-      const newTitle = data.title ?? title;
-      const newSubtitle = data.subtitle ?? subtitle;
-      const htmlParagraphs = (data.paragraphs ?? []).map(
-        (paragraph) => `<p>${sanitizeHtml(paragraph)}</p>`,
-      );
-
-      setTitle(newTitle);
-      setSubtitle(newSubtitle);
-      if (htmlParagraphs.length > 0) {
-        setBodyHtml(htmlParagraphs.join("\n"));
-      }
-
-      showSuccess("Conteúdo atualizado com ajuda da IA.");
-    } catch (err) {
-      console.error(err);
-      showError("Não foi possível gerar conteúdo com a IA.");
-    } finally {
-      dismissToast(toastId);
-      setIsGenerating(false);
-    }
-  };
-
-  const paragraphOptions = React.useMemo(() => {
+  const paragraphOptions: ParagraphOption[] = useMemo(() => {
     const options = parsedContent.paragraphs.map((paragraph, idx) => ({
       value: String(idx + 1),
       label: `${idx + 1} - ${paragraph.slice(0, 60)}${paragraph.length > 60 ? "..." : ""}`,
@@ -589,7 +564,11 @@ const CreatePDF: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-gray-50 py-6">
-      <Seo title="Criar PDF — EbookFy" description="Monte seu PDF com capa, conteúdo e exportação em segundos." />
+      <Seo
+        title="Criar PDF — EbookFy"
+        description="Monte seu PDF com capa, conteúdo e exportação em segundos."
+      />
+
       <div className="container mx-auto grid gap-6 px-4 lg:grid-cols-[420px_1fr]">
         <div className="space-y-6">
           <Card>
@@ -715,7 +694,7 @@ const CreatePDF: React.FC = () => {
                     <SelectValue placeholder="Selecione o idioma" />
                   </SelectTrigger>
                   <SelectContent>
-                    {languageOptions.map((option) => (
+                    {LANGUAGE_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -746,11 +725,11 @@ const CreatePDF: React.FC = () => {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={handleImageUpload}
+                onChange={handleInlineImageUpload}
               />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-3">
+              <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1">
                   <Label>Posição</Label>
                   <Select value={selectedParagraph} onValueChange={setSelectedParagraph}>
@@ -777,10 +756,11 @@ const CreatePDF: React.FC = () => {
                     Nenhuma imagem adicionada ainda.
                   </p>
                 )}
+
                 {images.map((image) => (
                   <div
                     key={image.id}
-                    className="rounded-md border bg-white p-3 space-y-2 shadow-sm"
+                    className="space-y-2 rounded-md border bg-white p-3 shadow-sm"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Imagem</span>
@@ -792,6 +772,7 @@ const CreatePDF: React.FC = () => {
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </div>
+
                     <div className="space-y-2">
                       <Label>URL</Label>
                       <Input
@@ -805,6 +786,7 @@ const CreatePDF: React.FC = () => {
                         }
                       />
                     </div>
+
                     <div className="space-y-2">
                       <Label>Legenda</Label>
                       <Input
@@ -818,6 +800,7 @@ const CreatePDF: React.FC = () => {
                         }
                       />
                     </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Tamanho</Label>
@@ -837,7 +820,7 @@ const CreatePDF: React.FC = () => {
                             <SelectValue placeholder="Largura" />
                           </SelectTrigger>
                           <SelectContent>
-                            {widthOptions.map((option) => (
+                            {IMAGE_WIDTH_OPTIONS.map((option) => (
                               <SelectItem key={option} value={String(option)}>
                                 {option}%
                               </SelectItem>
