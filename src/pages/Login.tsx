@@ -42,7 +42,7 @@ const Login: React.FC = () => {
             redirectTo={redirectTo}
           />
           <p className="mt-3 text-xs text-muted-foreground text-center">
-            Caso não receba o e-mail, verifique a caixa de SPAM. Se persistir, o envio de e-mails pode não estar configurado no Supabase.
+            Caso não receba o e-mail, verifique a caixa de SPAM.
           </p>
         </CardContent>
       </Card>
