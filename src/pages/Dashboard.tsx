@@ -5,16 +5,38 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
-import { LogOut, FileText, User, BookOpen, CreditCard, Sparkles, ArrowRight, UserPlus } from "lucide-react";
+import {
+  LogOut,
+  FileText,
+  User,
+  BookOpen,
+  CreditCard,
+  Sparkles,
+  ArrowRight,
+  UserPlus,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Seo from "@/components/Seo";
-import { showError, showLoading, showSuccess, dismissToast } from "@/utils/toast";
+import {
+  showError,
+  showLoading,
+  showSuccess,
+  dismissToast,
+} from "@/utils/toast";
 import { useEntitlements } from "@/features/subscription/useEntitlements";
 import { getMonthlyExportCount } from "@/features/subscription/usage";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 type PdfHistory = {
   id: string;
@@ -61,12 +83,16 @@ const Dashboard: React.FC = () => {
   const handleManageSubscription = async () => {
     const toastId = showLoading("Abrindo gerenciador de assinatura...");
     try {
-      const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>(
-        "create-portal-session",
-        { body: { returnUrl: `${window.location.origin}/dashboard` } }
-      );
+      const { data, error } = await supabase.functions.invoke<{
+        url?: string;
+        error?: string;
+      }>("create-portal-session", {
+        body: { returnUrl: `${window.location.origin}/dashboard` },
+      });
       if (error || !data?.url) {
-        showError("Você ainda não possui assinatura ativa. Escolha um plano para começar.");
+        showError(
+          "Você ainda não possui assinatura ativa. Escolha um plano para começar.",
+        );
         navigate("/upgrade");
         return;
       }
@@ -74,7 +100,9 @@ const Dashboard: React.FC = () => {
       window.location.href = data.url!;
     } catch (e) {
       console.error(e);
-      showError("Não foi possível abrir o portal da assinatura. Tente novamente.");
+      showError(
+        "Não foi possível abrir o portal da assinatura. Tente novamente.",
+      );
     } finally {
       dismissToast(toastId);
     }
@@ -85,7 +113,10 @@ const Dashboard: React.FC = () => {
     if (lang.includes("pt-br")) return "brl";
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-      if (tz.toLowerCase().includes("sao_paulo") || tz.toLowerCase().includes("america/sao_paulo")) {
+      if (
+        tz.toLowerCase().includes("sao_paulo") ||
+        tz.toLowerCase().includes("america/sao_paulo")
+      ) {
         return "brl";
       }
     } catch {}
@@ -97,7 +128,9 @@ const Dashboard: React.FC = () => {
     navigate(`/checkout?plan=${plan}&currency=${currency}`);
   };
 
-  const [whitelistEmail, setWhitelistEmail] = React.useState("email@adicione-aqui.com.br");
+  const [whitelistEmail, setWhitelistEmail] = React.useState(
+    "email@adicione-aqui.com.br",
+  );
   const handleAddToWhitelist = async () => {
     const email = (whitelistEmail || "").trim();
     if (!email) {
@@ -106,10 +139,10 @@ const Dashboard: React.FC = () => {
     }
     const toastId = showLoading(`Adicionando ${email} à whitelist...`);
     try {
-      const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>(
-        "whitelist",
-        { body: { action: "add", email } }
-      );
+      const { data, error } = await supabase.functions.invoke<{
+        ok?: boolean;
+        error?: string;
+      }>("whitelist", { body: { action: "add", email } });
       if (error || !data?.ok) {
         showError(data?.error || "Não foi possível adicionar o e-mail.");
         return;
@@ -125,7 +158,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
-      <Seo title="Dashboard - EbookFy - Ebook em Segundos" description="Veja seu resumo, histórico de PDFs e dados da conta." />
+      <Seo
+        title="Dashboard - EbookFy - Ebook em Segundos"
+        description="Veja seu resumo, histórico de PDFs e dados da conta."
+      />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -191,7 +227,9 @@ const Dashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{isLoading ? "…" : total}</div>
+                  <div className="text-3xl font-bold">
+                    {isLoading ? "…" : total}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -203,16 +241,23 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <div className="text-sm text-muted-foreground">Carregando…</div>
+                    <div className="text-sm text-muted-foreground">
+                      Carregando…
+                    </div>
                   ) : last ? (
                     <div className="text-sm">
-                      <div className="font-medium break-all">{last.title || last.filename}</div>
+                      <div className="font-medium break-all">
+                        {last.title || last.filename}
+                      </div>
                       <div className="text-muted-foreground">
-                        {new Date(last.created_at).toLocaleString()} • {last.pages ?? "-"} pág.
+                        {new Date(last.created_at).toLocaleString()} •{" "}
+                        {last.pages ?? "-"} pág.
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-muted-foreground">Nenhum PDF exportado ainda.</div>
+                    <div className="text-sm text-muted-foreground">
+                      Nenhum PDF exportado ainda.
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -226,9 +271,13 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="text-sm text-muted-foreground">Carregando…</div>
+                  <div className="text-sm text-muted-foreground">
+                    Carregando…
+                  </div>
                 ) : !history || history.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">Nenhum registro encontrado.</div>
+                  <div className="text-sm text-muted-foreground">
+                    Nenhum registro encontrado.
+                  </div>
                 ) : (
                   <div className="w-full overflow-x-auto">
                     <Table>
@@ -244,21 +293,36 @@ const Dashboard: React.FC = () => {
                       <TableBody>
                         {history.map((h) => (
                           <TableRow key={h.id}>
-                            <TableCell className="max-w-[240px] truncate" title={h.title || ""}>
+                            <TableCell
+                              className="max-w-[240px] truncate"
+                              title={h.title || ""}
+                            >
                               {h.title || "-"}
                             </TableCell>
-                            <TableCell className="break-all">{h.filename}</TableCell>
-                            <TableCell className="text-right">{h.pages ?? "-"}</TableCell>
-                            <TableCell>{new Date(h.created_at).toLocaleString()}</TableCell>
+                            <TableCell className="break-all">
+                              {h.filename}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {h.pages ?? "-"}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(h.created_at).toLocaleString()}
+                            </TableCell>
                             <TableCell className="text-right">
                               {h.file_url ? (
                                 <Button variant="outline" size="sm" asChild>
-                                  <a href={h.file_url} target="_blank" rel="noopener noreferrer">
+                                  <a
+                                    href={h.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
                                     Abrir PDF
                                   </a>
                                 </Button>
                               ) : (
-                                <span className="text-xs text-muted-foreground">Não disponível</span>
+                                <span className="text-xs text-muted-foreground">
+                                  Não disponível
+                                </span>
                               )}
                             </TableCell>
                           </TableRow>
@@ -283,6 +347,16 @@ const Dashboard: React.FC = () => {
                   <span className="text-muted-foreground">Email: </span>
                   <span className="font-medium">{user?.email}</span>
                 </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Idioma da interface</p>
+                  <LanguageSwitcher className="sm:max-w-xs" />
+                  <p className="text-xs text-muted-foreground">
+                    Essa escolha define o idioma da plataforma e fica salva na
+                    sua conta.
+                  </p>
+                </div>
+
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                     <Button variant="secondary" onClick={handleManageSubscription}>
@@ -293,7 +367,9 @@ const Dashboard: React.FC = () => {
 
                   {isAdmin && (
                     <div className="mt-4 rounded-md border p-3 bg-white">
-                      <div className="text-sm font-medium mb-2">Whitelist de uso ilimitado</div>
+                      <div className="text-sm font-medium mb-2">
+                        Whitelist de uso ilimitado
+                      </div>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Input
                           type="email"
@@ -308,7 +384,8 @@ const Dashboard: React.FC = () => {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">
-                        Quem estiver nesta lista pode criar eBooks ilimitados (sem marca d’água, com IA).
+                        Quem estiver nesta lista pode criar eBooks ilimitados
+                        (sem marca d’água, com IA).
                       </p>
                     </div>
                   )}
@@ -357,7 +434,8 @@ const Dashboard: React.FC = () => {
             </div>
 
             <p className="mt-6 text-sm text-muted-foreground">
-              Todos os planos são por assinatura mensal. Você pode cancelar a qualquer momento em Conta &gt; Gerenciar assinatura.
+              Todos os planos são por assinatura mensal. Você pode cancelar a
+              qualquer momento em Conta &gt; Gerenciar assinatura.
             </p>
 
             <div className="mt-4 text-sm text-muted-foreground">
