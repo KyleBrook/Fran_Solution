@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 const Login: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation("auth");
+  const { t } = useTranslation("auth");
 
   useEffect(() => {
     if (user) {
@@ -50,14 +50,11 @@ const Login: React.FC = () => {
             redirectTo={redirectTo}
             localization={{
               variables: {
-                data: {
-                  sign_in: {
-                    email_label: "E-mail",
-                    email_input_placeholder: "email@exemplo.com",
-                  },
+                sign_in: {
+                  email_label: "E-mail",
+                  email_input_placeholder: "email@exemplo.com",
                 },
               },
-              lang: i18n.resolvedLanguage || i18n.language || "pt",
             }}
           />
           <p className="text-xs text-muted-foreground text-center">{t("login.noAccount")}</p>
