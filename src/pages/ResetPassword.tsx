@@ -8,10 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 const ResetPassword: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation("auth");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -60,28 +63,29 @@ const ResetPassword: React.FC = () => {
         description="Defina uma nova senha para acessar sua conta EbookFy."
       />
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-xl">Definir nova senha</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Informe uma nova senha para continuar usando sua conta.
-          </p>
+        <CardHeader className="space-y-6">
+          <div className="flex justify-end">
+            <LanguageSwitcher />
+          </div>
+          <div className="text-center space-y-2">
+            <CardTitle className="text-xl">{t("resetPassword.title")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("resetPassword.subtitle")}</p>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center">Carregando…</p>
+            <p className="text-sm text-muted-foreground text-center">{t("login.loading")}</p>
           ) : !user ? (
             <div className="space-y-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                O link de redefinição expirou ou é inválido. Solicite um novo link e tente novamente.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("resetPassword.invalidSession")}</p>
               <Button asChild variant="outline">
-                <Link to="/login">Voltar para o login</Link>
+                <Link to="/login">{t("resetPassword.backToLogin")}</Link>
               </Button>
             </div>
           ) : (
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="new-password">Nova senha</Label>
+                <Label htmlFor="new-password">{t("resetPassword.newPassword")}</Label>
                 <Input
                   id="new-password"
                   type="password"
@@ -92,7 +96,7 @@ const ResetPassword: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirme a nova senha</Label>
+                <Label htmlFor="confirm-password">{t("resetPassword.confirmPassword")}</Label>
                 <Input
                   id="confirm-password"
                   type="password"
@@ -103,10 +107,10 @@ const ResetPassword: React.FC = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Salvando..." : "Atualizar senha"}
+                {submitting ? t("resetPassword.saving") : t("resetPassword.submit")}
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                Após salvar, você será redirecionado automaticamente para o dashboard.
+                {t("resetPassword.successRedirect")}
               </p>
             </form>
           )}
