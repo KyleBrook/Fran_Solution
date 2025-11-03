@@ -1,0 +1,13 @@
+{
+  "appName": "EbookFy",
+  "language": {
+    "portuguese": "Português",
+    "english": "Inglês"
+  },
+  "actions": {
+    "close": "Fechar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Salvar"
+  }
+}
