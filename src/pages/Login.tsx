@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import Seo from "@/components/Seo";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslation } from "react-i18next";
 
 const Login: React.FC = () => {
@@ -32,14 +31,9 @@ const Login: React.FC = () => {
         description="Acesse sua conta para ver seu dashboard e histórico de PDFs."
       />
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-6">
-          <div className="flex justify-end">
-            <LanguageSwitcher />
-          </div>
-          <div className="text-center space-y-2">
-            <CardTitle className="text-xl">{t("login.title")}</CardTitle>
-            <p className="text-sm text-muted-foreground">{t("login.subtitle")}</p>
-          </div>
+        <CardHeader className="space-y-4 text-center">
+          <CardTitle className="text-xl">{t("login.title")}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t("login.subtitle")}</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <Auth
