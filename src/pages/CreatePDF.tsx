@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Card,
   CardContent,
@@ -29,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEntitlements } from "@/features/subscription/useEntitlements";
 import { sanitizeHtml, convertHtmlToText } from "@/utils/rich-text";
 import type { ImageItem, ParagraphOption } from "@/components/create-pdf/types";
+import { useTranslation } from "react-i18next";
 
 type ParsedContent = {
   blocks: React.ReactNode[];
@@ -45,35 +52,29 @@ const DEFAULTS = {
 };
 
 const DEFAULT_BODY = `
-<h1>Bem-vindo ao EbookFy</h1>
-<p>Use este espaço para construir o conteúdo do seu eBook. Você pode formatar títulos, listas e parágrafos conforme preferir.</p>
-<h2>Exemplo de seção</h2>
-<p>Experimente inserir subtítulos, listas ou citações utilizando a barra de ferramentas flutuante do editor.</p>
-<blockquote>“A prática leva à perfeição.”</blockquote>
+<h1>Welcome to EbookFy</h1>
+<p>Use this space to craft the content of your eBook. You can format headings, lists, and paragraphs as you prefer.</p>
+<h2>Example section</h2>
+<p>Try adding subheadings, lists, or quotes by using the floating toolbar of the editor.</p>
+<blockquote>“Practice makes perfect.”</blockquote>
 <ul>
-  <li>Ponto importante número um</li>
-  <li>Ponto importante número dois</li>
+  <li>Important point number one</li>
+  <li>Important point number two</li>
 </ul>
-<p>Quando estiver satisfeito, utilize a pré-visualização ao lado para ver como o seu PDF ficará antes de exportar.</p>
+<p>When you are satisfied, use the preview on the right to see how your PDF will look before exporting.</p>
 `;
 
 const STORAGE_KEY = "ebookfy:create_pdf_state:v1";
 const IMAGE_WIDTH_OPTIONS = [40, 50, 60, 70, 80, 90, 100];
-const LANGUAGE_OPTIONS = [
-  { value: "pt-BR", label: "Português (Brasil)" },
-  { value: "en-US", label: "English (US)" },
-  { value: "es-ES", label: "Español (ES)" },
-  { value: "fr-FR", label: "Français (FR)" },
-];
 
-const slugify = (value: string, fallback = "documento") => {
+const slugify = (value: string, fallback = "document") => {
   const base = (value || fallback)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return base ? `${base}.pdf` : "documento.pdf";
+  return base ? `${base}.pdf` : "document.pdf";
 };
 
 const createParagraphNode = (
@@ -231,18 +232,19 @@ const parseBodyHtml = (html: string, justify: boolean): ParsedContent => {
 
 const CreatePDF: React.FC = () => {
   const { aiEnabled } = useEntitlements();
+  const { t } = useTranslation("create-pdf");
 
-  const [lessonNumber, setLessonNumber] = useState("M1 | Aula 01");
-  const [topic, setTopic] = useState("Tema da Aula");
-  const [title, setTitle] = useState("Meu eBook incrível");
-  const [subtitle, setSubtitle] = useState("Uma jornada em poucas páginas");
+  const [lessonNumber, setLessonNumber] = useState("M1 | Lesson 01");
+  const [topic, setTopic] = useState("Lesson topic");
+  const [title, setTitle] = useState("My amazing eBook");
+  const [subtitle, setSubtitle] = useState("A journey in a few pages");
   const [signatureTitle, setSignatureTitle] = useState("EbookFy");
-  const [signatureSubtitle, setSignatureSubtitle] = useState("Ebook em segundos");
+  const [signatureSubtitle, setSignatureSubtitle] = useState("eBooks in seconds");
   const [coverBackground, setCoverBackground] = useState(DEFAULTS.coverBackground);
   const [logo, setLogo] = useState(DEFAULTS.logo);
   const [contentBackground, setContentBackground] = useState(DEFAULTS.contentBackground);
   const [pageLogo, setPageLogo] = useState(DEFAULTS.pageLogo);
-  const [language, setLanguage] = useState("pt-BR");
+  const [language, setLanguage] = useState("en-US");
   const [justifyText, setJustifyText] = useState(true);
 
   const [bodyHtml, setBodyHtml] = useState<string>(DEFAULT_BODY);
@@ -314,7 +316,7 @@ const CreatePDF: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error("Não foi possível carregar o rascunho salvo.", error);
+      console.error("Unable to load draft.", error);
     } finally {
       setDraftLoaded(true);
     }
@@ -343,7 +345,7 @@ const CreatePDF: React.FC = () => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (error) {
-      console.error("Não foi possível salvar o rascunho do eBook.", error);
+      console.error("Unable to save draft.", error);
     }
   }, [
     draftLoaded,
@@ -373,27 +375,27 @@ const CreatePDF: React.FC = () => {
     ) => {
       const file = event.target.files?.[0];
       if (!file) return;
-      const toastId = showLoading("Enviando imagem...");
+      const toastId = showLoading(t("messages.uploadingImage"));
       try {
         const publicUrl = await uploadImageToSupabase(file, { folder });
         setter(publicUrl);
-        showSuccess("Imagem atualizada com sucesso!");
+        showSuccess(t("messages.imageUploaded"));
       } catch (error) {
         console.error(error);
-        showError("Não foi possível enviar a imagem.");
+        showError(t("messages.imageUploadError"));
       } finally {
         dismissToast(toastId);
         event.target.value = "";
       }
     },
-    [],
+    [t],
   );
 
   const handleInlineImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
-      const toastId = showLoading("Carregando imagem...");
+      const toastId = showLoading(t("messages.uploadingImage"));
       try {
         const publicUrl = await uploadImageToSupabase(file);
         setImages((prev) => [
@@ -406,16 +408,16 @@ const CreatePDF: React.FC = () => {
             afterParagraph: Number(selectedParagraph) || 0,
           },
         ]);
-        showSuccess("Imagem adicionada com sucesso!");
+        showSuccess(t("messages.imageAdded"));
       } catch (error) {
         console.error(error);
-        showError("Não foi possível enviar a imagem.");
+        showError(t("messages.imageUploadError"));
       } finally {
         dismissToast(toastId);
         event.target.value = "";
       }
     },
-    [selectedParagraph],
+    [selectedParagraph, t],
   );
 
   const handleRemoveImage = useCallback((id: string) => {
@@ -424,12 +426,12 @@ const CreatePDF: React.FC = () => {
 
   const handleApplyAI = useCallback(async () => {
     if (!aiEnabled) {
-      showError("O plano atual não inclui geração por IA.");
+      showError(t("messages.aiPlanRequired"));
       return;
     }
 
     setIsGenerating(true);
-    const toastId = showLoading("Gerando conteúdo com IA...");
+    const toastId = showLoading(t("messages.aiGenerating"));
     try {
       const { data, error } = await supabase.functions.invoke<{
         title?: string;
@@ -446,7 +448,7 @@ const CreatePDF: React.FC = () => {
       });
 
       if (error) throw error;
-      if (!data) throw new Error("A resposta da IA está vazia.");
+      if (!data) throw new Error("Empty AI response.");
 
       if (data.title) setTitle(data.title);
       if (data.subtitle) setSubtitle(data.subtitle);
@@ -456,15 +458,15 @@ const CreatePDF: React.FC = () => {
         setBodyHtml(paragraphs.join("\n"));
       }
 
-      showSuccess("Conteúdo atualizado com ajuda da IA.");
+      showSuccess(t("messages.aiSuccess"));
     } catch (err) {
       console.error(err);
-      showError("Não foi possível gerar conteúdo com a IA.");
+      showError(t("messages.aiError"));
     } finally {
       dismissToast(toastId);
       setIsGenerating(false);
     }
-  }, [aiEnabled, bodyHtml, language, subtitle, suggestions, title]);
+  }, [aiEnabled, bodyHtml, language, suggestions, title, subtitle, t]);
 
   const parsedContent = useMemo(
     () => parseBodyHtml(bodyHtml, justifyText),
@@ -559,59 +561,69 @@ const CreatePDF: React.FC = () => {
       value: String(idx + 1),
       label: `${idx + 1} - ${paragraph.slice(0, 60)}${paragraph.length > 60 ? "..." : ""}`,
     }));
-    return [{ value: "0", label: "Inserir antes do conteúdo" }, ...options];
-  }, [parsedContent.paragraphs]);
+    return [{ value: "0", label: t("cards.images.fields.beforeContent") }, ...options];
+  }, [parsedContent.paragraphs, t]);
+
+  const languageOptions = useMemo(
+    () => [
+      { value: "pt-BR", label: t("languageOptions.ptBr") },
+      { value: "en-US", label: t("languageOptions.enUs") },
+      { value: "es-ES", label: t("languageOptions.esEs") },
+      { value: "fr-FR", label: t("languageOptions.frFr") },
+    ],
+    [t],
+  );
 
   return (
     <div className="min-h-screen w-full bg-gray-50 py-6">
       <Seo
-        title="Criar PDF — EbookFy"
-        description="Monte seu PDF com capa, conteúdo e exportação em segundos."
+        title={t("seo.title")}
+        description={t("seo.description")}
       />
 
       <div className="container mx-auto grid gap-6 px-4 lg:grid-cols-[420px_1fr]">
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Capa</CardTitle>
+              <CardTitle>{t("cards.cover.title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Número da aula</Label>
+                <Label>{t("cards.cover.fields.lessonNumber")}</Label>
                 <Input value={lessonNumber} onChange={(e) => setLessonNumber(e.target.value)} />
               </div>
               <div>
-                <Label>Tema</Label>
+                <Label>{t("cards.cover.fields.topic")}</Label>
                 <Input value={topic} onChange={(e) => setTopic(e.target.value)} />
               </div>
               <div>
-                <Label>Título principal</Label>
+                <Label>{t("cards.cover.fields.title")}</Label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} />
               </div>
               <div>
-                <Label>Subtítulo</Label>
+                <Label>{t("cards.cover.fields.subtitle")}</Label>
                 <Input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
               </div>
               <div>
-                <Label>Linha de assinatura</Label>
+                <Label>{t("cards.cover.fields.signatureTitle")}</Label>
                 <Input value={signatureTitle} onChange={(e) => setSignatureTitle(e.target.value)} />
               </div>
               <div>
-                <Label>Subtítulo da assinatura</Label>
+                <Label>{t("cards.cover.fields.signatureSubtitle")}</Label>
                 <Input
                   value={signatureSubtitle}
                   onChange={(e) => setSignatureSubtitle(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Imagem de fundo (capa)</Label>
+                <Label>{t("cards.cover.actions.uploadBackground")}</Label>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => coverBackgroundInputRef.current?.click()}
                 >
                   <UploadCloud className="mr-2 h-4 w-4" />
-                  Upload imagem de fundo
+                  {t("buttons.uploadCoverBackground")}
                 </Button>
                 <input
                   ref={coverBackgroundInputRef}
@@ -624,14 +636,14 @@ const CreatePDF: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Logo da capa</Label>
+                <Label>{t("cards.cover.actions.uploadLogo")}</Label>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => logoInputRef.current?.click()}
                 >
                   <UploadCloud className="mr-2 h-4 w-4" />
-                  Upload logo da capa
+                  {t("buttons.uploadCoverLogo")}
                 </Button>
                 <input
                   ref={logoInputRef}
@@ -646,18 +658,18 @@ const CreatePDF: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Configurações do conteúdo</CardTitle>
+              <CardTitle>{t("cards.content.title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Logo no conteúdo</Label>
+                <Label>{t("cards.content.fields.pageLogo")}</Label>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => pageLogoInputRef.current?.click()}
                 >
                   <UploadCloud className="mr-2 h-4 w-4" />
-                  Upload logo do conteúdo
+                  {t("buttons.uploadContentLogo")}
                 </Button>
                 <input
                   ref={pageLogoInputRef}
@@ -668,14 +680,14 @@ const CreatePDF: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Background das páginas</Label>
+                <Label>{t("cards.content.fields.background")}</Label>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => contentBackgroundInputRef.current?.click()}
                 >
                   <UploadCloud className="mr-2 h-4 w-4" />
-                  Upload background
+                  {t("buttons.uploadContentBackground")}
                 </Button>
                 <input
                   ref={contentBackgroundInputRef}
@@ -688,13 +700,13 @@ const CreatePDF: React.FC = () => {
                 />
               </div>
               <div>
-                <Label>Idioma</Label>
+                <Label>{t("cards.content.fields.language")}</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o idioma" />
+                    <SelectValue placeholder={t("cards.content.placeholders.language")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {LANGUAGE_OPTIONS.map((option) => (
+                    {languageOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -703,22 +715,22 @@ const CreatePDF: React.FC = () => {
                 </Select>
               </div>
               <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                <span>Justificar parágrafos</span>
+                <span>{t("switch.justify")}</span>
                 <Switch checked={justifyText} onCheckedChange={setJustifyText} />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Imagens</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <CardTitle>{t("cards.images.title")}</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <UploadCloud className="mr-2 h-4 w-4" />
-                Adicionar imagem
+                {t("buttons.addImage")}
               </Button>
               <input
                 ref={fileInputRef}
@@ -731,10 +743,10 @@ const CreatePDF: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1">
-                  <Label>Posição</Label>
+                  <Label>{t("cards.images.fields.position")}</Label>
                   <Select value={selectedParagraph} onValueChange={setSelectedParagraph}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a posição" />
+                      <SelectValue placeholder={t("cards.images.fields.position")} />
                     </SelectTrigger>
                     <SelectContent>
                       {paragraphOptions.map((option) => (
@@ -746,14 +758,14 @@ const CreatePDF: React.FC = () => {
                   </Select>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Escolha o parágrafo após o qual as novas imagens serão inseridas.
+                  {t("cards.images.positionHelp")}
                 </p>
               </div>
 
               <div className="space-y-3">
                 {images.length === 0 && (
                   <p className="text-sm text-muted-foreground">
-                    Nenhuma imagem adicionada ainda.
+                    {t("cards.images.empty")}
                   </p>
                 )}
 
@@ -763,18 +775,21 @@ const CreatePDF: React.FC = () => {
                     className="space-y-2 rounded-md border bg-white p-3 shadow-sm"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Imagem</span>
+                      <span className="text-sm font-medium">
+                        {t("cards.images.sectionTitle")}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleRemoveImage(image.id)}
+                        aria-label="Remove image"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>URL</Label>
+                      <Label>{t("cards.images.fields.url")}</Label>
                       <Input
                         value={image.src}
                         onChange={(e) =>
@@ -788,7 +803,7 @@ const CreatePDF: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Legenda</Label>
+                      <Label>{t("cards.images.fields.caption")}</Label>
                       <Input
                         value={image.caption ?? ""}
                         onChange={(e) =>
@@ -803,7 +818,7 @@ const CreatePDF: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label>Tamanho</Label>
+                        <Label>{t("cards.images.fields.width")}</Label>
                         <Select
                           value={String(image.widthPercent)}
                           onValueChange={(value) =>
@@ -817,7 +832,7 @@ const CreatePDF: React.FC = () => {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Largura" />
+                            <SelectValue placeholder="Width" />
                           </SelectTrigger>
                           <SelectContent>
                             {IMAGE_WIDTH_OPTIONS.map((option) => (
@@ -829,7 +844,7 @@ const CreatePDF: React.FC = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Parágrafo</Label>
+                        <Label>{t("cards.images.fields.paragraph")}</Label>
                         <Select
                           value={String(image.afterParagraph)}
                           onValueChange={(value) =>
@@ -863,26 +878,25 @@ const CreatePDF: React.FC = () => {
 
           <Card>
             <CardHeader className="flex items-center justify-between">
-              <CardTitle>Assistente de IA</CardTitle>
+              <CardTitle>{t("cards.assistant.title")}</CardTitle>
               <Sparkles className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Escreva instruções adicionais para orientar a IA. O conteúdo existente será
-                tratado como base.
+                {t("cards.assistant.description")}
               </p>
               <Textarea
                 value={suggestions}
                 onChange={(e) => setSuggestions(e.target.value)}
-                placeholder="Ex.: Ajuste o tom para algo inspirador e inclua um convite à ação no final."
+                placeholder={t("placeholders.aiSuggestions")}
                 rows={4}
               />
-              <Button onClick={handleApplyAI} disabled={isGenerating || !aiEnabled}>
-                {isGenerating ? "Gerando..." : "Gerar conteúdo com IA"}
+              <Button onClick={handleApplyAI} disabled={isGenerating}>
+                {isGenerating ? t("buttons.generating") : t("buttons.generateWithAI")}
               </Button>
               {!aiEnabled && (
                 <p className="text-xs text-muted-foreground">
-                  A geração por IA está disponível nos planos Basic e Pro.
+                  {t("alerts.aiUnavailable")}
                 </p>
               )}
             </CardContent>
@@ -892,7 +906,7 @@ const CreatePDF: React.FC = () => {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Conteúdo do eBook</CardTitle>
+              <CardTitle>{t("cards.editor.title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <RichTextEditor
@@ -900,24 +914,22 @@ const CreatePDF: React.FC = () => {
                 onChange={setBodyHtml}
                 fontSizes={{ body: 20, h1: 40, h2: 28, h3: 24 }}
                 className="bg-white"
-                placeholder="Escreva ou cole o conteúdo do seu eBook aqui..."
+                placeholder={t("placeholders.editor")}
               />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex items-center justify-between">
-              <CardTitle>Pré-visualização</CardTitle>
+              <CardTitle>{t("cards.preview.title")}</CardTitle>
               <ExportPDFButton filename={filename} titleForHistory={title} />
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
                 <div>
-                  <p className="text-sm">
-                    O conteúdo é dividido automaticamente em páginas A4.
-                  </p>
+                  <p className="text-sm">{t("cards.preview.description")}</p>
                   <p className="text-xs text-muted-foreground">
-                    Ajuste o texto e clique em exportar para gerar o PDF final.
+                    {t("cards.preview.help")}
                   </p>
                 </div>
                 <PDFGenerator data={pdfData} />

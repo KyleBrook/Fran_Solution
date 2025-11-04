@@ -1,6 +1,107 @@
 {
-  "form": {
-    "lessonNumber": "Número da aula",
-    "topic": "Tema"
+  "seo": {
+    "title": "Criar PDF — EbookFy",
+    "description": "Monte seu PDF com capa, conteúdo e exportação em segundos."
+  },
+  "cards": {
+    "cover": {
+      "title": "Capa",
+      "fields": {
+        "lessonNumber": "Número da aula",
+        "topic": "Tema",
+        "title": "Título principal",
+        "subtitle": "Subtítulo",
+        "signatureTitle": "Linha de assinatura",
+        "signatureSubtitle": "Subtítulo da assinatura"
+      },
+      "actions": {
+        "uploadBackground": "Enviar imagem de fundo",
+        "uploadLogo": "Enviar logo da capa"
+      }
+    },
+    "content": {
+      "title": "Configurações do conteúdo",
+      "fields": {
+        "pageLogo": "Logo no conteúdo",
+        "background": "Background das páginas",
+        "language": "Idioma"
+      },
+      "placeholders": {
+        "language": "Selecione um idioma"
+      },
+      "actions": {
+        "uploadPageLogo": "Enviar logo do conteúdo",
+        "uploadBackground": "Enviar background"
+      }
+    },
+    "images": {
+      "title": "Imagens",
+      "fields": {
+        "position": "Posição",
+        "beforeContent": "Inserir antes do conteúdo",
+        "url": "URL da imagem",
+        "caption": "Legenda",
+        "width": "Tamanho",
+        "paragraph": "Parágrafo"
+      },
+      "sectionTitle": "Imagem",
+      "empty": "Nenhuma imagem adicionada ainda.",
+      "positionHelp": "Escolha o parágrafo após o qual as novas imagens serão inseridas."
+    },
+    "assistant": {
+      "title": "Assistente de IA",
+      "description": "Escreva instruções adicionais para orientar a IA. O conteúdo existente será usado como base."
+    },
+    "editor": {
+      "title": "Conteúdo do eBook"
+    },
+    "preview": {
+      "title": "Pré-visualização",
+      "description": "O conteúdo é dividido automaticamente em páginas A4.",
+      "help": "Ajuste o texto e clique em exportar para gerar o PDF final."
+    }
+  },
+  "buttons": {
+    "uploadCoverBackground": "Enviar imagem de fundo",
+    "uploadCoverLogo": "Enviar logo da capa",
+    "uploadContentLogo": "Enviar logo do conteúdo",
+    "uploadContentBackground": "Enviar background",
+    "addImage": "Adicionar imagem",
+    "generateWithAI": "Gerar conteúdo com IA",
+    "generating": "Gerando...",
+    "exportPdf": "Exportar PDF"
+  },
+  "placeholders": {
+    "aiSuggestions": "Ex.: Ajuste o tom para algo inspirador e inclua um convite à ação no final.",
+    "editor": "Escreva ou cole o conteúdo do seu eBook aqui..."
+  },
+  "messages": {
+    "uploadingImage": "Enviando imagem...",
+    "imageUploaded": "Imagem atualizada com sucesso!",
+    "imageUploadError": "Não foi possível enviar a imagem.",
+    "imageAdded": "Imagem adicionada com sucesso!",
+    "aiPlanRequired": "O plano atual não inclui geração por IA.",
+    "aiGenerating": "Gerando conteúdo com IA...",
+    "aiSuccess": "Conteúdo atualizado com a ajuda da IA.",
+    "aiError": "Não foi possível gerar conteúdo com a IA."
+  },
+  "languageOptions": {
+    "ptBr": "Português (Brasil)",
+    "enUs": "Inglês (EUA)",
+    "esEs": "Espanhol (Espanha)",
+    "frFr": "Francês (França)"
+  },
+  "switch": {
+    "justify": "Justificar parágrafos"
+  },
+  "alerts": {
+    "aiUnavailable": "A geração por IA está disponível nos planos Basic e Pro."
+  },
+  "export": {
+    "loading": "Exportando PDF...",
+    "success": "PDF exportado com sucesso!",
+    "error": "Não foi possível exportar o PDF.",
+    "needLogin": "Você precisa estar logado para exportar.",
+    "limitReached": "Você atingiu o limite de exportações do seu plano. Faça upgrade para continuar."
   }
 }

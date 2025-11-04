@@ -1,6 +1,107 @@
 {
-  "form": {
-    "lessonNumber": "Lesson number",
-    "topic": "Topic"
+  "seo": {
+    "title": "Create PDF — EbookFy",
+    "description": "Assemble your PDF with a cover, content, and export in seconds."
+  },
+  "cards": {
+    "cover": {
+      "title": "Cover",
+      "fields": {
+        "lessonNumber": "Lesson number",
+        "topic": "Topic",
+        "title": "Main title",
+        "subtitle": "Subtitle",
+        "signatureTitle": "Signature line",
+        "signatureSubtitle": "Signature subtitle"
+      },
+      "actions": {
+        "uploadBackground": "Upload background",
+        "uploadLogo": "Upload cover logo"
+      }
+    },
+    "content": {
+      "title": "Content settings",
+      "fields": {
+        "pageLogo": "Content logo",
+        "background": "Page background",
+        "language": "Language"
+      },
+      "placeholders": {
+        "language": "Select a language"
+      },
+      "actions": {
+        "uploadPageLogo": "Upload content logo",
+        "uploadBackground": "Upload background"
+      }
+    },
+    "images": {
+      "title": "Images",
+      "fields": {
+        "position": "Position",
+        "beforeContent": "Insert before the content",
+        "url": "Image URL",
+        "caption": "Caption",
+        "width": "Size",
+        "paragraph": "Paragraph"
+      },
+      "sectionTitle": "Image",
+      "empty": "No images added yet.",
+      "positionHelp": "Choose the paragraph after which new images will be inserted."
+    },
+    "assistant": {
+      "title": "AI assistant",
+      "description": "Write additional instructions to guide the AI. The existing content is used as the base."
+    },
+    "editor": {
+      "title": "eBook content"
+    },
+    "preview": {
+      "title": "Preview",
+      "description": "Content is automatically split into A4 pages.",
+      "help": "Adjust the text and click export to generate the final PDF."
+    }
+  },
+  "buttons": {
+    "uploadCoverBackground": "Upload background",
+    "uploadCoverLogo": "Upload cover logo",
+    "uploadContentLogo": "Upload content logo",
+    "uploadContentBackground": "Upload background",
+    "addImage": "Add image",
+    "generateWithAI": "Generate content with AI",
+    "generating": "Generating...",
+    "exportPdf": "Export PDF"
+  },
+  "placeholders": {
+    "aiSuggestions": "E.g.: Adjust the tone to be inspirational and add a call to action at the end.",
+    "editor": "Write or paste your eBook content here..."
+  },
+  "messages": {
+    "uploadingImage": "Uploading image...",
+    "imageUploaded": "Image updated successfully!",
+    "imageUploadError": "We couldn't upload the image.",
+    "imageAdded": "Image added successfully!",
+    "aiPlanRequired": "This plan does not include AI generation.",
+    "aiGenerating": "Generating content with AI...",
+    "aiSuccess": "Content updated with AI.",
+    "aiError": "We couldn't generate content with AI."
+  },
+  "languageOptions": {
+    "ptBr": "Portuguese (Brazil)",
+    "enUs": "English (US)",
+    "esEs": "Spanish (Spain)",
+    "frFr": "French (France)"
+  },
+  "switch": {
+    "justify": "Justify paragraphs"
+  },
+  "alerts": {
+    "aiUnavailable": "AI generation is available on Basic and Pro plans."
+  },
+  "export": {
+    "loading": "Exporting PDF...",
+    "success": "PDF exported successfully!",
+    "error": "We couldn't export the PDF.",
+    "needLogin": "You need to be logged in to export.",
+    "limitReached": "You reached your plan's export limit. Upgrade to continue."
   }
 }
