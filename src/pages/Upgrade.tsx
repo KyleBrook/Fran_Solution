@@ -1,106 +1,130 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
-import Seo from "@/components/Seo";
-import { useEntitlements } from "@/features/subscription/useEntitlements";
-import { useNavigate } from "react-router-dom";
-
-const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex items-start gap-2 text-sm">
-    <Check className="mt-0.5 h-4 w-4 text-emerald-600" />
-    <span>{children}</span>
-  </div>
-);
-
-export default function Upgrade() {
-  const { planId } = useEntitlements();
-  const navigate = useNavigate();
-
-  const detectCurrency = (): "brl" | "usd" => {
-    const lang = (navigator.language || "").toLowerCase();
-    if (lang.includes("pt-br")) return "brl";
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-      if (tz.toLowerCase().includes("sao_paulo") || tz.toLowerCase().includes("america/sao_paulo")) {
-        return "brl";
-      }
-    } catch {}
-    return "usd";
-  };
-
-  const goToCheckout = (plan: "basic" | "pro") => {
-    const currency = detectCurrency();
-    navigate(`/checkout?plan=${plan}&currency=${currency}`);
-  };
-
-  return (
-    <div className="min-h-screen w-full bg-gray-50 py-10">
-      <Seo title="Upgrade de Plano — EbookFy" description="Escolha um plano para continuar exportando sem limites e com IA." />
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold">Escolha seu plano</h1>
-          <p className="text-sm text-muted-foreground">
-            Seu plano atual: <span className="font-medium uppercase">{planId}</span>
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-          <Card className="border-emerald-200">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Free <Badge variant="secondary">Grátis</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-3xl font-bold">R$ 0</div>
-              <Feature>1 eBook/mês</Feature>
-              <Feature>Marca d’água</Feature>
-              <Feature>Sem IA</Feature>
-              <Button variant="outline" className="w-full" disabled>
-                Atual
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Basic <Badge>Recomendado</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-3xl font-bold">R$ 12,90</div>
-              <Feature>10 eBooks/mês</Feature>
-              <Feature>Sem marca d’água</Feature>
-              <Feature>IA inclusa</Feature>
-              <Button className="w-full" onClick={() => goToCheckout("basic")}>
-                Assinar Basic
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Pro</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-3xl font-bold">R$ 24,90</div>
-              <Feature>50 eBooks/mês</Feature>
-              <Feature>Sem marca d’água</Feature>
-              <Feature>IA inclusa</Feature>
-              <Button className="w-full" onClick={() => goToCheckout("pro")}>
-                Assinar Pro
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <p className="text-sm text-muted-foreground text-center mt-6">
-          Todos os planos são por assinatura mensal. Você pode cancelar a qualquer momento em Dashboard &gt; Conta &gt; Gerenciar assinatura.
-        </p>
-      </div>
-    </div>
-  );
+import React from "react";  
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";  
+import { Button } from "@/components/ui/button";  
+import { Badge } from "@/components/ui/badge";  
+import { Check } from "lucide-react";  
+import Seo from "@/components/seo/Seo";  
+import { useEntitlements } from "@/hooks/useEntitlements";  
+import { useNavigate } from "react-router-dom";  
+import { useTranslation } from "react-i18next";  
+  
+type PlanCardTranslation = {  
+  title: string;  
+  badge?: string;  
+  price: string;  
+  features: string[];  
+  cta: string;  
+};  
+  
+type PlanCardConfig = {  
+  id: "free" | "basic" | "pro";  
+  data: PlanCardTranslation;  
+  onClick?: () => void;  
+  disabled?: boolean;  
+  buttonVariant?: "outline" | "default";  
+  cardClassName?: string;  
+  badgeVariant?: "default" | "secondary";  
+};  
+  
+const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (  
+  <div className="flex items-center space-x-2 text-sm text-muted-foreground">  
+    <Check className="h-5 w-5 text-emerald-500" />  
+    <span>{children}</span>  
+  </div>  
+);  
+  
+export default function Upgrade() {  
+  const { planId } = useEntitlements();  
+  const navigate = useNavigate();  
+  const { t } = useTranslation("upgrade");  
+  
+  const planLabels = t("planLabels", { returnObjects: true }) as Record<string, string>;  
+  const currentPlanLabel = planLabels[planId] ?? planId;  
+  
+  const goToCheckout = (plan: "basic" | "pro") => {  
+    navigate(`/checkout?plan=${plan}`);  
+  };  
+  
+  const planConfig = t("planCards", { returnObjects: true }) as Record<string, PlanCardTranslation>;  
+  
+  const planCards: PlanCardConfig[] = [];  
+  
+  if (planConfig.free) {  
+    planCards.push({  
+      id: "free",  
+      data: planConfig.free,  
+      disabled: true,  
+      buttonVariant: "outline",  
+      cardClassName: "border-emerald-200",  
+      badgeVariant: "secondary",  
+    });  
+  }  
+  if (planConfig.basic) {  
+    planCards.push({  
+      id: "basic",  
+      data: planConfig.basic,  
+      onClick: () => goToCheckout("basic"),  
+      badgeVariant: "default",  
+    });  
+  }  
+  if (planConfig.pro) {  
+    planCards.push({  
+      id: "pro",  
+      data: planConfig.pro,  
+      onClick: () => goToCheckout("pro"),  
+      badgeVariant: "default",  
+    });  
+  }  
+  
+  return (  
+    <div className="min-h-screen w-full bg-gray-50 py-10">  
+      <Seo title={t("seo.title")} description={t("seo.description")} />  
+      <div className="container mx-auto px-4">  
+        <div className="text-center mb-8">  
+          <h1 className="text-2xl font-semibold">{t("heading.title")}</h1>  
+          <p className="text-sm text-muted-foreground">{t("heading.subtitle")}</p>  
+          <p className="text-sm text-muted-foreground mt-2">  
+            {t("currentPlanPrefix")}{" "}  
+            <span className="font-medium uppercase">{currentPlanLabel}</span>  
+          </p>  
+        </div>  
+  
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">  
+          {planCards.map((plan) => (  
+            <Card  
+              key={plan.id}  
+              className={plan.cardClassName ? plan.cardClassName : undefined}  
+            >  
+              <CardHeader>  
+                <CardTitle className="flex items-center justify-between">  
+                  {plan.data.title}  
+                  {plan.data.badge ? (  
+                    <Badge variant={plan.badgeVariant}>{plan.data.badge}</Badge>  
+                  ) : null}  
+                </CardTitle>  
+              </CardHeader>  
+              <CardContent className="space-y-3">  
+                <div className="text-3xl font-bold">{plan.data.price}</div>  
+                {plan.data.features.map((feature) => (  
+                  <Feature key={feature}>{feature}</Feature>  
+                ))}  
+                <Button  
+                  className="w-full"  
+                  variant={plan.buttonVariant ?? "default"}  
+                  disabled={plan.disabled}  
+                  onClick={plan.onClick}  
+                >  
+                  {plan.data.cta}  
+                </Button>  
+              </CardContent>  
+            </Card>  
+          ))}  
+        </div>  
+  
+        <p className="text-sm text-muted-foreground text-center mt-6">  
+          {t("notes.subscriptionHelp")}  
+        </p>  
+      </div>  
+    </div>  
+  );  
 }

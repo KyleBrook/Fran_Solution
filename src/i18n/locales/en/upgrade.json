@@ -1,0 +1,56 @@
+{
+  "seo": {
+    "title": "Upgrade Plan — EbookFy",
+    "description": "Choose a plan to unlock AI features, remove watermarks, and export more."
+  },
+  "heading": {
+    "title": "Choose your plan",
+    "subtitle": "Pick the option that matches the number of eBooks you produce."
+  },
+  "currentPlanPrefix": "Your current plan:",
+  "planLabels": {
+    "free": "Free",
+    "basic": "Basic",
+    "pro": "Pro"
+  },
+  "planCards": {
+    "free": {
+      "title": "Free",
+      "badge": "Free",
+      "price": "$0",
+      "features": [
+        "1 eBook/month",
+        "Watermark",
+        "No AI"
+      ],
+      "cta": "Current plan",
+      "ctaCurrent": "Current plan"
+    },
+    "basic": {
+      "title": "Basic",
+      "badge": "Popular",
+      "price": "$12.90",
+      "features": [
+        "10 eBooks/month",
+        "No watermark",
+        "AI included"
+      ],
+      "cta": "Subscribe to Basic",
+      "ctaCurrent": "Current plan"
+    },
+    "pro": {
+      "title": "Pro",
+      "price": "$24.90",
+      "features": [
+        "50 eBooks/month",
+        "No watermark",
+        "Advanced AI"
+      ],
+      "cta": "Subscribe to Pro",
+      "ctaCurrent": "Current plan"
+    }
+  },
+  "notes": {
+    "subscriptionHelp": "All plans are monthly subscriptions. You can cancel anytime via Dashboard > Account > Manage subscription."
+  }
+}

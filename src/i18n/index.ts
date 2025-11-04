@@ -7,12 +7,14 @@ import enAuth from "./locales/en/auth.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enLanding from "./locales/en/landing.json";
 import enCreatePdf from "./locales/en/create-pdf.json";
+import enUpgrade from "./locales/en/upgrade.json";
 
 import ptCommon from "./locales/pt/common.json";
 import ptAuth from "./locales/pt/auth.json";
 import ptDashboard from "./locales/pt/dashboard.json";
 import ptLanding from "./locales/pt/landing.json";
 import ptCreatePdf from "./locales/pt/create-pdf.json";
+import ptUpgrade from "./locales/pt/upgrade.json";
 
 const FALLBACK_LANGUAGE = "pt";
 const storedLanguage =
@@ -25,6 +27,7 @@ const resources = {
     dashboard: enDashboard,
     landing: enLanding,
     "create-pdf": enCreatePdf,
+    upgrade: enUpgrade,
   },
   pt: {
     common: ptCommon,
@@ -32,6 +35,7 @@ const resources = {
     dashboard: ptDashboard,
     landing: ptLanding,
     "create-pdf": ptCreatePdf,
+    upgrade: ptUpgrade,
   },
 };
 
@@ -56,7 +60,7 @@ if (!i18n.isInitialized) {
       react: {
         useSuspense: false,
       },
-      ns: ["common", "auth", "dashboard", "landing", "create-pdf"],
+      ns: ["common", "auth", "dashboard", "landing", "create-pdf", "upgrade"],
       defaultNS: "common",
     });
 }

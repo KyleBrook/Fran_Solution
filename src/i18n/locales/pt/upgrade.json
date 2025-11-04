@@ -1,0 +1,56 @@
+{
+  "seo": {
+    "title": "Upgrade de Plano — EbookFy",
+    "description": "Escolha um plano para desbloquear IA, remover marca d’água e exportar mais."
+  },
+  "heading": {
+    "title": "Escolha seu plano",
+    "subtitle": "Selecione a opção ideal para o volume de eBooks que você produz."
+  },
+  "currentPlanPrefix": "Seu plano atual:",
+  "planLabels": {
+    "free": "Free",
+    "basic": "Basic",
+    "pro": "Pro"
+  },
+  "planCards": {
+    "free": {
+      "title": "Free",
+      "badge": "Grátis",
+      "price": "R$ 0",
+      "features": [
+        "1 eBook/mês",
+        "Marca d’água",
+        "Sem IA"
+      ],
+      "cta": "Plano atual",
+      "ctaCurrent": "Plano atual"
+    },
+    "basic": {
+      "title": "Basic",
+      "badge": "Recomendado",
+      "price": "R$ 12,90",
+      "features": [
+        "10 eBooks/mês",
+        "Sem marca d’água",
+        "IA incluída"
+      ],
+      "cta": "Assinar Basic",
+      "ctaCurrent": "Plano atual"
+    },
+    "pro": {
+      "title": "Pro",
+      "price": "R$ 24,90",
+      "features": [
+        "50 eBooks/mês",
+        "Sem marca d’água",
+        "IA avançada"
+      ],
+      "cta": "Assinar Pro",
+      "ctaCurrent": "Plano atual"
+    }
+  },
+  "notes": {
+    "subscriptionHelp": "Todos os planos são por assinatura mensal. Você pode cancelar a qualquer momento em Dashboard > Conta > Gerenciar assinatura."
+  }
+}
