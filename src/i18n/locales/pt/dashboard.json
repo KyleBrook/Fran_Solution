@@ -2,5 +2,106 @@
   "header": {
     "greeting": "Bem-vindo",
     "adminBadge": "Admin"
+  },
+  "seo": {
+    "title": "Dashboard - EbookFy - Ebook em Segundos",
+    "description": "Veja seu resumo, histórico de PDFs e dados da conta."
+  },
+  "heading": {
+    "title": "Dashboard",
+    "welcome": "Bem-vindo!",
+    "welcomeWithEmail": "Bem-vindo, {{email}}!"
+  },
+  "tabs": {
+    "overview": "Visão Geral",
+    "history": "Histórico",
+    "account": "Conta",
+    "plans": "Planos"
+  },
+  "buttons": {
+    "createPdf": "Criar PDF",
+    "signOut": "Sair",
+    "createNow": "Criar agora",
+    "upgrade": "Fazer upgrade",
+    "manageSubscription": "Gerenciar assinatura",
+    "openPdf": "Abrir PDF",
+    "openUpgradePage": "Abrir página de Upgrade",
+    "addToWhitelist": "Adicionar à whitelist"
+  },
+  "alerts": {
+    "freePlanTitle": "Você tem 1 eBook gratuito por mês",
+    "freePlanMessageUnused": "Aproveite seu eBook gratuito.",
+    "freePlanMessageUsed": "Você já utilizou {{used}} de 1 eBook gratuito este mês."
+  },
+  "states": {
+    "loading": "Carregando…"
+  },
+  "cards": {
+    "totalExports": "Total de PDFs exportados",
+    "lastExport": "Último exportado"
+  },
+  "history": {
+    "title": "Histórico de PDFs",
+    "empty": "Nenhum registro encontrado.",
+    "none": "Nenhum PDF exportado ainda.",
+    "pagesCount_one": "{{count}} página",
+    "pagesCount_other": "{{count}} páginas",
+    "pagesUnknown": "Páginas desconhecidas"
+  },
+  "table": {
+    "headers": {
+      "title": "Título",
+      "file": "Arquivo",
+      "pages": "Páginas",
+      "date": "Data",
+      "actions": "Ações"
+    },
+    "notAvailable": "Não disponível"
+  },
+  "account": {
+    "title": "Informações da Conta",
+    "emailLabel": "E-mail",
+    "languageLabel": "Idioma da interface",
+    "languageHelp": "Essa escolha define o idioma da plataforma e fica salva na sua conta.",
+    "whitelist": {
+      "title": "Whitelist de uso ilimitado",
+      "placeholder": "usuario@exemplo.com",
+      "description": "Quem estiver nesta lista pode criar eBooks ilimitados (sem marca d’água, com IA)."
+    }
+  },
+  "plans": {
+    "basic": {
+      "label": "Basic",
+      "badge": "Recomendado",
+      "price": "R$ 12,90",
+      "features": [
+        "10 eBooks/mês",
+        "Sem marca d’água",
+        "IA inclusa"
+      ],
+      "button": "Assinar Basic"
+    },
+    "pro": {
+      "label": "Pro",
+      "price": "R$ 24,90",
+      "features": [
+        "50 eBooks/mês",
+        "Sem marca d’água",
+        "IA inclusa"
+      ],
+      "button": "Assinar Pro"
+    },
+    "subscriptionHelp": "Todos os planos são por assinatura mensal. Você pode cancelar a qualquer momento em Conta > Gerenciar assinatura.",
+    "moreDetails": "Quer ver mais detalhes? Visite a página completa de planos."
+  },
+  "messages": {
+    "openSubscriptionManager": "Abrindo gerenciador de assinatura...",
+    "missingSubscription": "Você ainda não possui assinatura ativa. Escolha um plano para começar.",
+    "redirectingPortal": "Redirecionando para o portal da Stripe...",
+    "portalError": "Não foi possível abrir o portal da assinatura. Tente novamente.",
+    "invalidEmail": "Informe um e-mail válido.",
+    "addingToWhitelist": "Adicionando {{email}} à whitelist...",
+    "whitelistSuccess": "E-mail adicionado à whitelist com sucesso!",
+    "whitelistError": "Falha ao adicionar o e-mail à whitelist."
   }
 }

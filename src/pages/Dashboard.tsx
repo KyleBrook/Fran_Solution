@@ -37,6 +37,7 @@ import {
 import { useEntitlements } from "@/features/subscription/useEntitlements";
 import { getMonthlyExportCount } from "@/features/subscription/usage";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 type PdfHistory = {
   id: string;
@@ -49,6 +50,7 @@ type PdfHistory = {
 };
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation("dashboard");
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { planId } = useEntitlements();
@@ -76,12 +78,16 @@ const Dashboard: React.FC = () => {
   const total = history?.length ?? 0;
   const last = history?.[0];
 
+  const greeting = user?.email
+    ? t("heading.welcomeWithEmail", { email: user.email })
+    : t("heading.welcome");
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
 
   const handleManageSubscription = async () => {
-    const toastId = showLoading("Abrindo gerenciador de assinatura...");
+    const toastId = showLoading(t("messages.openSubscriptionManager"));
     try {
       const { data, error } = await supabase.functions.invoke<{
         url?: string;
@@ -90,19 +96,15 @@ const Dashboard: React.FC = () => {
         body: { returnUrl: `${window.location.origin}/dashboard` },
       });
       if (error || !data?.url) {
-        showError(
-          "Você ainda não possui assinatura ativa. Escolha um plano para começar.",
-        );
+        showError(t("messages.missingSubscription"));
         navigate("/upgrade");
         return;
       }
-      showSuccess("Redirecionando para o portal da Stripe...");
+      showSuccess(t("messages.redirectingPortal"));
       window.location.href = data.url!;
     } catch (e) {
       console.error(e);
-      showError(
-        "Não foi possível abrir o portal da assinatura. Tente novamente.",
-      );
+      showError(t("messages.portalError"));
     } finally {
       dismissToast(toastId);
     }
@@ -119,7 +121,9 @@ const Dashboard: React.FC = () => {
       ) {
         return "brl";
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
     return "usd";
   };
 
@@ -128,62 +132,104 @@ const Dashboard: React.FC = () => {
     navigate(`/checkout?plan=${plan}&currency=${currency}`);
   };
 
-  const [whitelistEmail, setWhitelistEmail] = React.useState(
-    "email@adicione-aqui.com.br",
-  );
+  const [whitelistEmail, setWhitelistEmail] = React.useState("");
+
   const handleAddToWhitelist = async () => {
     const email = (whitelistEmail || "").trim();
     if (!email) {
-      showError("Informe um e-mail válido.");
+      showError(t("messages.invalidEmail"));
       return;
     }
-    const toastId = showLoading(`Adicionando ${email} à whitelist...`);
+    const toastId = showLoading(
+      t("messages.addingToWhitelist", { email }),
+    );
     try {
       const { data, error } = await supabase.functions.invoke<{
         ok?: boolean;
         error?: string;
       }>("whitelist", { body: { action: "add", email } });
       if (error || !data?.ok) {
-        showError(data?.error || "Não foi possível adicionar o e-mail.");
+        showError(data?.error || t("messages.whitelistError"));
         return;
       }
-      showSuccess("E-mail adicionado à whitelist com sucesso!");
+      showSuccess(t("messages.whitelistSuccess"));
     } catch (e) {
       console.error(e);
-      showError("Falha ao adicionar à whitelist.");
+      showError(t("messages.whitelistError"));
     } finally {
       dismissToast(toastId);
     }
   };
 
+  const freePlanMessage =
+    monthlyUsed === 0
+      ? t("alerts.freePlanMessageUnused")
+      : t("alerts.freePlanMessageUsed", { used: monthlyUsed });
+
+  const pagesLabel =
+    last?.pages != null
+      ? t("history.pagesCount", { count: last.pages })
+      : t("history.pagesUnknown");
+
+  const planCards = React.useMemo(
+    () => [
+      {
+        id: "basic" as const,
+        label: t("plans.basic.label"),
+        badge: t("plans.basic.badge"),
+        price: t("plans.basic.price"),
+        features: t("plans.basic.features", {
+          returnObjects: true,
+        }) as string[],
+        button: t("plans.basic.button"),
+        onClick: () => goToCheckout("basic"),
+      },
+      {
+        id: "pro" as const,
+        label: t("plans.pro.label"),
+        badge: "",
+        price: t("plans.pro.price"),
+        features: t("plans.pro.features", {
+          returnObjects: true,
+        }) as string[],
+        button: t("plans.pro.button"),
+        onClick: () => goToCheckout("pro"),
+      },
+    ],
+    [t],
+  );
+
   return (
     <div className="min-h-screen w-full bg-gray-50">
-      <Seo
-        title="Dashboard - EbookFy - Ebook em Segundos"
-        description="Veja seu resumo, histórico de PDFs e dados da conta."
-      />
+      <Seo title={t("seo.title")} description={t("seo.description")} />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold">Dashboard</h1>
-              {isAdmin && <Badge variant="secondary">Admin</Badge>}
+              <h1 className="text-2xl font-semibold">{t("heading.title")}</h1>
+              {isAdmin && (
+                <Badge variant="secondary">
+                  {t("header.adminBadge")}
+                </Badge>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Bem-vindo{user?.email ? `, ${user.email}` : ""}!
-            </p>
+            <p className="text-sm text-muted-foreground">{greeting}</p>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button asChild className="shadow-md">
-              <Link to="/criar-pdf" aria-label="Criar PDF">
+            <Button
+              asChild
+              className="shadow-md"
+              aria-label={t("buttons.createPdf")}
+            >
+              <Link to="/criar-pdf">
                 <BookOpen className="mr-2 h-4 w-4" />
-                Criar PDF
+                {t("buttons.createPdf")}
               </Link>
             </Button>
             <Button variant="outline" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
-              Sair
+              {t("buttons.signOut")}
             </Button>
           </div>
         </div>
@@ -191,19 +237,16 @@ const Dashboard: React.FC = () => {
         {planId === "free" && (
           <Alert className="mb-6">
             <Sparkles className="h-5 w-5" />
-            <AlertTitle>Você tem 1 eBook gratuito por mês</AlertTitle>
+            <AlertTitle>{t("alerts.freePlanTitle")}</AlertTitle>
             <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <span>
-                {monthlyUsed === 0
-                  ? "Aproveite seu eBook gratuito."
-                  : `Você já utilizou ${monthlyUsed} de 1 eBook gratuito este mês.`}
-              </span>
+              <span>{freePlanMessage}</span>
               <div className="flex gap-2">
                 <Button size="sm" variant="secondary" asChild>
-                  <Link to="/criar-pdf">Criar agora</Link>
+                  <Link to="/criar-pdf">{t("buttons.createNow")}</Link>
                 </Button>
                 <Button size="sm" onClick={() => navigate("/upgrade")}>
-                  Fazer upgrade <ArrowRight className="ml-1 h-4 w-4" />
+                  {t("buttons.upgrade")}{" "}
+                  <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </div>
             </AlertDescription>
@@ -212,10 +255,10 @@ const Dashboard: React.FC = () => {
 
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="flex flex-wrap">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="history">Histórico de PDFs</TabsTrigger>
-            <TabsTrigger value="account">Conta</TabsTrigger>
-            <TabsTrigger value="plans">Planos</TabsTrigger>
+            <TabsTrigger value="overview">{t("tabs.overview")}</TabsTrigger>
+            <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
+            <TabsTrigger value="account">{t("tabs.account")}</TabsTrigger>
+            <TabsTrigger value="plans">{t("tabs.plans")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
@@ -223,12 +266,12 @@ const Dashboard: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" /> Total de PDFs exportados
+                    <FileText className="h-5 w-5" /> {t("cards.totalExports")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {isLoading ? "…" : total}
+                    {isLoading ? t("states.loading") : total}
                   </div>
                 </CardContent>
               </Card>
@@ -236,13 +279,13 @@ const Dashboard: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" /> Último exportado
+                    <FileText className="h-5 w-5" /> {t("cards.lastExport")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
                     <div className="text-sm text-muted-foreground">
-                      Carregando…
+                      {t("states.loading")}
                     </div>
                   ) : last ? (
                     <div className="text-sm">
@@ -251,12 +294,12 @@ const Dashboard: React.FC = () => {
                       </div>
                       <div className="text-muted-foreground">
                         {new Date(last.created_at).toLocaleString()} •{" "}
-                        {last.pages ?? "-"} pág.
+                        {pagesLabel}
                       </div>
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground">
-                      Nenhum PDF exportado ainda.
+                      {t("history.none")}
                     </div>
                   )}
                 </CardContent>
@@ -267,27 +310,31 @@ const Dashboard: React.FC = () => {
           <TabsContent value="history" className="mt-4">
             <Card className="overflow-hidden">
               <CardHeader>
-                <CardTitle>Histórico de PDFs</CardTitle>
+                <CardTitle>{t("history.title")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <div className="text-sm text-muted-foreground">
-                    Carregando…
+                    {t("states.loading")}
                   </div>
                 ) : !history || history.length === 0 ? (
                   <div className="text-sm text-muted-foreground">
-                    Nenhum registro encontrado.
+                    {t("history.empty")}
                   </div>
                 ) : (
                   <div className="w-full overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Título</TableHead>
-                          <TableHead>Arquivo</TableHead>
-                          <TableHead className="text-right">Páginas</TableHead>
-                          <TableHead>Data</TableHead>
-                          <TableHead className="text-right">Ações</TableHead>
+                          <TableHead>{t("table.headers.title")}</TableHead>
+                          <TableHead>{t("table.headers.file")}</TableHead>
+                          <TableHead className="text-right">
+                            {t("table.headers.pages")}
+                          </TableHead>
+                          <TableHead>{t("table.headers.date")}</TableHead>
+                          <TableHead className="text-right">
+                            {t("table.headers.actions")}
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -295,7 +342,7 @@ const Dashboard: React.FC = () => {
                           <TableRow key={h.id}>
                             <TableCell
                               className="max-w-[240px] truncate"
-                              title={h.title || ""}
+                              title={h.title || undefined}
                             >
                               {h.title || "-"}
                             </TableCell>
@@ -316,12 +363,12 @@ const Dashboard: React.FC = () => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                   >
-                                    Abrir PDF
+                                    {t("buttons.openPdf")}
                                   </a>
                                 </Button>
                               ) : (
                                 <span className="text-xs text-muted-foreground">
-                                  Não disponível
+                                  {t("table.notAvailable")}
                                 </span>
                               )}
                             </TableCell>
@@ -339,21 +386,24 @@ const Dashboard: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" /> Informações da Conta
+                  <User className="h-5 w-5" /> {t("account.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Email: </span>
+                  <span className="text-muted-foreground">
+                    {t("account.emailLabel")}:{" "}
+                  </span>
                   <span className="font-medium">{user?.email}</span>
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Idioma da interface</p>
+                  <p className="text-sm font-medium">
+                    {t("account.languageLabel")}
+                  </p>
                   <LanguageSwitcher className="sm:max-w-xs" />
                   <p className="text-xs text-muted-foreground">
-                    Essa escolha define o idioma da plataforma e fica salva na
-                    sua conta.
+                    {t("account.languageHelp")}
                   </p>
                 </div>
 
@@ -361,31 +411,30 @@ const Dashboard: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                     <Button variant="secondary" onClick={handleManageSubscription}>
                       <CreditCard className="mr-2 h-4 w-4" />
-                      Gerenciar assinatura
+                      {t("buttons.manageSubscription")}
                     </Button>
                   </div>
 
                   {isAdmin && (
                     <div className="mt-4 rounded-md border p-3 bg-white">
                       <div className="text-sm font-medium mb-2">
-                        Whitelist de uso ilimitado
+                        {t("account.whitelist.title")}
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Input
                           type="email"
-                          placeholder="usuario@exemplo.com"
+                          placeholder={t("account.whitelist.placeholder")}
                           value={whitelistEmail}
                           onChange={(e) => setWhitelistEmail(e.target.value)}
                           className="sm:max-w-xs"
                         />
                         <Button variant="outline" onClick={handleAddToWhitelist}>
                           <UserPlus className="mr-2 h-4 w-4" />
-                          Adicionar à whitelist
+                          {t("buttons.addToWhitelist")}
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">
-                        Quem estiver nesta lista pode criar eBooks ilimitados
-                        (sem marca d’água, com IA).
+                        {t("account.whitelist.description")}
                       </p>
                     </div>
                   )}
@@ -396,52 +445,39 @@ const Dashboard: React.FC = () => {
 
           <TabsContent value="plans" className="mt-4">
             <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    Basic <Badge>Recomendado</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="text-3xl font-bold">R$ 12,90</div>
-                  <ul className="text-sm space-y-1">
-                    <li>• 10 eBooks/mês</li>
-                    <li>• Sem marca d’água</li>
-                    <li>• IA inclusa</li>
-                  </ul>
-                  <Button className="w-full" onClick={() => goToCheckout("basic")}>
-                    Assinar Basic
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pro</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="text-3xl font-bold">R$ 24,90</div>
-                  <ul className="text-sm space-y-1">
-                    <li>• 50 eBooks/mês</li>
-                    <li>• Sem marca d’água</li>
-                    <li>• IA inclusa</li>
-                  </ul>
-                  <Button className="w-full" onClick={() => goToCheckout("pro")}>
-                    Assinar Pro
-                  </Button>
-                </CardContent>
-              </Card>
+              {planCards.map((plan) => (
+                <Card key={plan.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{plan.label}</span>
+                      {plan.badge ? (
+                        <Badge variant="secondary">{plan.badge}</Badge>
+                      ) : null}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="text-3xl font-bold">{plan.price}</div>
+                    <ul className="text-sm space-y-1">
+                      {plan.features.map((feature) => (
+                        <li key={feature}>• {feature}</li>
+                      ))}
+                    </ul>
+                    <Button className="w-full" onClick={plan.onClick}>
+                      {plan.button}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
             <p className="mt-6 text-sm text-muted-foreground">
-              Todos os planos são por assinatura mensal. Você pode cancelar a
-              qualquer momento em Conta &gt; Gerenciar assinatura.
+              {t("plans.subscriptionHelp")}
             </p>
 
             <div className="mt-4 text-sm text-muted-foreground">
-              Quer ver mais detalhes? Visite a página completa de planos.
+              {t("plans.moreDetails")}
               <Button variant="link" className="px-1" asChild>
-                <Link to="/upgrade">Abrir página de Upgrade</Link>
+                <Link to="/upgrade">{t("buttons.openUpgradePage")}</Link>
               </Button>
             </div>
           </TabsContent>

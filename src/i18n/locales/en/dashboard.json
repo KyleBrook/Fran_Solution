@@ -2,5 +2,106 @@
   "header": {
     "greeting": "Welcome",
     "adminBadge": "Admin"
+  },
+  "seo": {
+    "title": "Dashboard - EbookFy",
+    "description": "See your summary, PDF history, and account details."
+  },
+  "heading": {
+    "title": "Dashboard",
+    "welcome": "Welcome!",
+    "welcomeWithEmail": "Welcome, {{email}}!"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "history": "History",
+    "account": "Account",
+    "plans": "Plans"
+  },
+  "buttons": {
+    "createPdf": "Create PDF",
+    "signOut": "Sign out",
+    "createNow": "Create now",
+    "upgrade": "Upgrade",
+    "manageSubscription": "Manage subscription",
+    "openPdf": "Open PDF",
+    "openUpgradePage": "Open upgrade page",
+    "addToWhitelist": "Add to whitelist"
+  },
+  "alerts": {
+    "freePlanTitle": "You have 1 free eBook per month",
+    "freePlanMessageUnused": "Enjoy your free eBook.",
+    "freePlanMessageUsed": "You have already used {{used}} of 1 free eBook this month."
+  },
+  "states": {
+    "loading": "Loading…"
+  },
+  "cards": {
+    "totalExports": "Total PDFs exported",
+    "lastExport": "Last exported"
+  },
+  "history": {
+    "title": "PDF history",
+    "empty": "No records found.",
+    "none": "No PDF exported yet.",
+    "pagesCount_one": "{{count}} page",
+    "pagesCount_other": "{{count}} pages",
+    "pagesUnknown": "Pages unknown"
+  },
+  "table": {
+    "headers": {
+      "title": "Title",
+      "file": "File",
+      "pages": "Pages",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "notAvailable": "Not available"
+  },
+  "account": {
+    "title": "Account information",
+    "emailLabel": "Email",
+    "languageLabel": "Interface language",
+    "languageHelp": "This choice sets the platform language and is saved to your account.",
+    "whitelist": {
+      "title": "Unlimited usage whitelist",
+      "placeholder": "user@example.com",
+      "description": "Anyone on this list can create unlimited eBooks (no watermark, with AI)."
+    }
+  },
+  "plans": {
+    "basic": {
+      "label": "Basic",
+      "badge": "Recommended",
+      "price": "R$ 12,90",
+      "features": [
+        "10 eBooks/month",
+        "No watermark",
+        "AI included"
+      ],
+      "button": "Subscribe to Basic"
+    },
+    "pro": {
+      "label": "Pro",
+      "price": "R$ 24,90",
+      "features": [
+        "50 eBooks/month",
+        "No watermark",
+        "AI included"
+      ],
+      "button": "Subscribe to Pro"
+    },
+    "subscriptionHelp": "All plans are monthly subscriptions. You can cancel anytime in Account > Manage subscription.",
+    "moreDetails": "Want to see more details? Visit the full plans page."
+  },
+  "messages": {
+    "openSubscriptionManager": "Opening subscription manager...",
+    "missingSubscription": "You don't have an active subscription yet. Choose a plan to get started.",
+    "redirectingPortal": "Redirecting to the Stripe portal...",
+    "portalError": "We couldn't open the subscription portal. Try again.",
+    "invalidEmail": "Please provide a valid email.",
+    "addingToWhitelist": "Adding {{email}} to the whitelist...",
+    "whitelistSuccess": "Email added to the whitelist successfully!",
+    "whitelistError": "Failed to add the email to the whitelist."
   }
 }
