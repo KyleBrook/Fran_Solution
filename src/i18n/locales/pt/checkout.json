@@ -1,0 +1,25 @@
+{
+  "seo": {
+    "title": "Checkout — EbookFy",
+    "description": "Finalize sua assinatura sem sair do site."
+  },
+  "heading": {
+    "title": "Pagamento — Plano {{plan}}"
+  },
+  "actions": {
+    "back": "Voltar"
+  },
+  "info": {
+    "subscription": "Esta é uma assinatura mensal. Você pode cancelar a qualquer momento em Dashboard > Conta > Gerenciar assinatura.",
+    "error": "Não foi possível iniciar o checkout. Tente novamente.",
+    "loading": "Carregando checkout…"
+  },
+  "plans": {
+    "basic": {
+      "label": "Basic"
+    },
+    "pro": {
+      "label": "Pro"
+    }
+  }
+}

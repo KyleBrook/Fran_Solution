@@ -1,0 +1,25 @@
+{
+  "seo": {
+    "title": "Checkout — EbookFy",
+    "description": "Finish your subscription without leaving the site."
+  },
+  "heading": {
+    "title": "Payment — {{plan}} plan"
+  },
+  "actions": {
+    "back": "Back"
+  },
+  "info": {
+    "subscription": "This is a monthly subscription. You can cancel anytime via Dashboard > Account > Manage subscription.",
+    "error": "We couldn't start the checkout. Please try again.",
+    "loading": "Loading checkout…"
+  },
+  "plans": {
+    "basic": {
+      "label": "Basic"
+    },
+    "pro": {
+      "label": "Pro"
+    }
+  }
+}
